@@ -278,9 +278,6 @@ def parse_whois_data(domain, whois_data):
         if line == "":
             continue
 
-        # TODO: Here you need to send a notification by email
-        #  and/or Telegram about the error.
-        #  I will do in the next version
         if "Your connection limit exceeded. Please slow down and try again later." in line:
             error = 2
             # print(f"{FLR}Domain: {domain}\nError: Your connection limit exceeded. Please slow down and try again later.")
