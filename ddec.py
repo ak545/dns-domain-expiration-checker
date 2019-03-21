@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Program: DNS Domain Expiration Checker from ak545
@@ -9,8 +10,8 @@
 # Author of this fork: Andrey Klimov < ak545 at mail dot ru >
 # https://github.com/ak545
 #
-# Current Version: 0.1
-# Date: 21-03-2019
+# Current Version: 0.2
+# Date: 22-03-2019
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -60,7 +61,7 @@ except ImportError:
 init(autoreset=True)
 
 # Global constants
-_VERSION = "0.1"
+_VERSION = "0.2"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -76,9 +77,9 @@ SEP = os.sep
 # SMTP options
 SMTP_SERVER = "localhost"
 # SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 25  # Default
 # SMTP_PORT = 587  # For starttls
 # SMTP_PORT = 465  # For SSL
-SMTP_PORT = 25  # Default
 SMTP_SENDER = "root"
 SMTP_PASSWORD = "P@ssw0rd"
 
@@ -88,7 +89,6 @@ REQUEST_HEADERS = {
 }
 
 # Telegram bot options
-
 # Proxy for telegram
 TELEGRAM_PROXIES = {}
 
@@ -103,21 +103,36 @@ CHAT_ID = '<INSERT YOUR CHANNEL ID>'
 TELEGRAM_URL = "https://api.telegram.org/bot" + MY_TOKEN + "/"
 
 # Options for an external utility whois
+# Keywords for whois-data
 EXPIRE_STRINGS = [
     "Registry Expiry Date:",
     "Expiration:",
-    "Domain Expiration Date",
+    "Domain Expiration Date:",
     "Registrar Registration Expiration Date:",
     "expire:",
     "paid-till:",
     "option expiration date:",
     "[Expires on]",
-    "Expiry date"
+    "Expiry date:",
+    "Expiry Date:",
+    "Expiration date:",
+    "Expiration Date:",
+    "Renewal date:",
+    "paid-till:",
+    "Domain expires:",
+    "renewal date:",
+    "expires:",
+    "Expires:",
+    "Expires On:"
 ]
 REGISTRAR_STRINGS = [
     "[Registrant]",
     "Registrar:",
-    "registrar:"
+    "registrar:",
+    "Registrant:",
+    # "Status:",
+    "Sponsoring Registrar:",
+    "REGISTRAR:"
 ]
 WHOIS_SERVER_STRINGS = [
     "Registrar WHOIS Server:",
@@ -127,14 +142,18 @@ NOT_FOUND_STRINGS = [
     "NOT FOUND",
     "No entries found for the selected source(s)."
 ]
+
+# Command for external whois
 WHOIS_COMMAND = "whois"
+
+# Timeout for external whois
 WHOIS_COMMAND_TIMEOUT = 10
 
 # The list of expired domains
 EXPIRES_DOMAIN = {}
 
 # The list of error domains
-ERRORS_DOMAIN = []
+ERRORS_DOMAIN = [] # Common errors
 ERRORS2_DOMAIN = []  # limit connection
 
 # Command line parameters
@@ -238,6 +257,8 @@ def make_whois_query(domain):
     :return: date, string, string, boolean (expiration_date, registrar, whois_server, error)
     """
     global WHOIS_COMMAND_TIMEOUT
+    global ERRORS_DOMAIN
+
     try:
         p = subprocess.Popen([WHOIS_COMMAND, domain],
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -248,9 +269,9 @@ def make_whois_query(domain):
     try:
         whois_data = p.communicate(timeout=WHOIS_COMMAND_TIMEOUT)[0]
     except Exception as e:
-        print(f"{FLR}Unable to read from the Popen pipe.\nDomain: {domain}.\nException: {e}")
-        # sys.exit(1)
-        return None, None, None, True
+        if domain not in ERRORS_DOMAIN:
+            ERRORS_DOMAIN.append(str(domain).lower())
+        return None, None, None, 1
 
     # TODO: Work around whois issue #55 which returns a non-zero
     # exit code for valid domains.
@@ -259,6 +280,7 @@ def make_whois_query(domain):
     #    sys.exit(-1)
 
     whois_data = str(whois_data, 'utf-8', 'ignore')
+
     return parse_whois_data(domain, whois_data)
 
 
@@ -269,6 +291,8 @@ def parse_whois_data(domain, whois_data):
     :param whois_data: string
     :return: date, string, string, boolean (expiration_date, registrar, whois_server, error)
     """
+    global ERRORS2_DOMAIN
+
     expiration_date = None
     registrar = None
     whois_server = None
@@ -279,8 +303,10 @@ def parse_whois_data(domain, whois_data):
             continue
 
         if "Your connection limit exceeded. Please slow down and try again later." in line:
+            # Interval is small
             error = 2
-            # print(f"{FLR}Domain: {domain}\nError: Your connection limit exceeded. Please slow down and try again later.")
+            if domain not in ERRORS2_DOMAIN:
+                ERRORS2_DOMAIN.append(str(domain).lower())
             return None, None, None, error
 
         if any(not_found_string in line for not_found_string in
@@ -323,6 +349,7 @@ def calculate_expiration_days(expiration_date):
     except:
         print(f"{FLR}Unable to calculate the expiration days")
         sys.exit(-1)
+
     return domain_expire.days
 
 
@@ -343,7 +370,7 @@ def send_expires_dict_telegram():
 
     message = ""
     if len(EXPIRES_DOMAIN) > 0:
-        # Add expires domains
+        # add expiring domains
         message += "\n<b>Expiring domains</b><pre>" + today + "\n"
         message += hl + "\n"
         for domain, day_left in EXPIRES_DOMAIN.items():
@@ -353,7 +380,7 @@ def send_expires_dict_telegram():
         message += "</pre>"
 
     if len(ERRORS_DOMAIN) > 0:
-        # Add error domains
+        # add error domains
         message += "\n<b>Domains that caused errors</b><pre>" + today + "\n"
         message += hl + "\n"
         for domain in ERRORS_DOMAIN:
@@ -363,7 +390,7 @@ def send_expires_dict_telegram():
         message += "</pre>"
 
     if len(ERRORS2_DOMAIN) > 0:
-        # Add error2 domains
+        # add error2 domains
         message += "\n<b>Exceeded the limit on whois</b><pre>" + today + "\n"
         message += hl + "\n"
         for domain in ERRORS2_DOMAIN:
@@ -446,7 +473,7 @@ def send_expires_dict_email():
     # For part plain
     domain_list_txt = ""
     if len(EXPIRES_DOMAIN) > 0:
-        # Add expires domains
+        # add expiring domains
         domain_list_txt += "\nExpiring domains\n"
         domain_list_txt += today + "\n"
         domain_list_txt += hl + "\n"
@@ -458,7 +485,7 @@ def send_expires_dict_email():
             domain_list_txt += str_domain_item
 
     if len(ERRORS_DOMAIN) > 0:
-        # Add error domains
+        # add error domains
         domain_list_txt += "\nDomains that caused errors\n"
         domain_list_txt += today + "\n"
         domain_list_txt += hl + "\n"
@@ -468,7 +495,7 @@ def send_expires_dict_email():
             domain_list_txt += str_domain_item
 
     if len(ERRORS2_DOMAIN) > 0:
-        # Add error2 domains
+        # add error2 domains
         domain_list_txt += "\nExceeded the limit on whois\n"
         domain_list_txt += today + "\n"
         domain_list_txt += hl + "\n"
@@ -482,7 +509,7 @@ def send_expires_dict_email():
     # For part html
     domain_list = ""
     if len(EXPIRES_DOMAIN) > 0:
-        # Add expires domains
+        # add expiring domains
         domain_list += "<br><b>Expiring domains</b><br><pre>"
         domain_list += today + "\n"
         domain_list += hl + "\n"
@@ -495,7 +522,7 @@ def send_expires_dict_email():
         domain_list += "</pre>"
 
     if len(ERRORS_DOMAIN) > 0:
-        # Add error domains
+        # add error domains
         domain_list += "<br><b>Domains that caused errors</b><br><pre>"
         domain_list += today + "\n"
         domain_list += hl + "\n"
@@ -506,7 +533,7 @@ def send_expires_dict_email():
         domain_list += "</pre>"
 
     if len(ERRORS2_DOMAIN) > 0:
-        # Add error2 domains
+        # add error2 domains
         domain_list += "<br><b>Exceeded the limit on whois</b><br><pre>"
         domain_list += today + "\n"
         domain_list += hl + "\n"
@@ -526,7 +553,6 @@ def send_expires_dict_email():
 
     message = msg.as_string()
 
-    # Try to log in to server and send email
     send_email(message)
 
 
@@ -844,7 +870,8 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
     dlerr2 = "{:<17}".format("Is it Free?")
 
     # If error == 3
-    # Your connection limit exceeded. Please slow down and try again later.
+    # Your connection limit exceeded. 
+    # Please slow down and try again later.
     dlerr3 = "{:<17}".format("Interval is small")
 
     if days_remaining == -1 or error:
@@ -922,7 +949,7 @@ def check_domain(domain_name, expiration_days, interval_time=None, current_domai
     :param expiration_days: integer
     :param interval_time: integer
     :param current_domain: integer
-    :return: 0 - Error, 1 - Successfully
+    :return: False - Error, True - Successfully
     """
     global NAMESPACE
     global EXPIRES_DOMAIN
@@ -957,10 +984,12 @@ def check_domain(domain_name, expiration_days, interval_time=None, current_domai
                 expiration_date_e, registrar_e, whois_server_e, error = make_whois_query(domain_name)
                 if error:
                     if error == 1:
-                        ERRORS_DOMAIN.append(str(domain_name).lower())
+                        if domain_name not in ERRORS_DOMAIN:
+                            ERRORS_DOMAIN.append(str(domain_name).lower())
                     elif error == 2:
                         # Exceeded the limit on whois
-                        ERRORS2_DOMAIN.append(str(domain_name).lower())
+                        if domain_name not in ERRORS2_DOMAIN:
+                            ERRORS2_DOMAIN.append(str(domain_name).lower())
 
                 if not expiration_date:
                     expiration_date = expiration_date_e
@@ -969,7 +998,8 @@ def check_domain(domain_name, expiration_days, interval_time=None, current_domai
                 if not whois_server:
                     whois_server = whois_server_e
             else:
-                ERRORS_DOMAIN.append(str(domain_name).lower())
+                if domain_name not in ERRORS_DOMAIN:
+                    ERRORS_DOMAIN.append(str(domain_name).lower())
                 if NAMESPACE.print_to_console:
                     print_domain(domain_name, None, None, None, -1, -1, current_domain, error)  # Error
                 if current_domain < G_DOMAINS_TOTAL:
@@ -977,9 +1007,9 @@ def check_domain(domain_name, expiration_days, interval_time=None, current_domai
                         if NAMESPACE.print_to_console:
                             print(f"\tWait {interval_time} sec...\r", end="")
                         time.sleep(interval_time)
-                return 0
+                return False
 
-    if not whois_server and not registrar and not expiration_date:
+    if (not whois_server) and (not registrar) and (not expiration_date):
         if NAMESPACE.print_to_console:
             print_domain(domain_name, whois_server, registrar, expiration_date, -2, -1, current_domain, error)  # Free ?
         if current_domain < G_DOMAINS_TOTAL:
@@ -987,7 +1017,7 @@ def check_domain(domain_name, expiration_days, interval_time=None, current_domai
                 if NAMESPACE.print_to_console:
                     print(f"\tWait {interval_time} sec...\r", end="")
                 time.sleep(interval_time)
-        return 0
+        return False
 
     if not expiration_date:
         if NAMESPACE.print_to_console:
@@ -997,7 +1027,7 @@ def check_domain(domain_name, expiration_days, interval_time=None, current_domai
                 if NAMESPACE.print_to_console:
                     print(f"\tWait {interval_time} sec...\r", end="")
                 time.sleep(interval_time)
-        return 0
+        return False
 
     if 'datetime.datetime' in str(type(expiration_date)):
         expiration_date_min = expiration_date
@@ -1013,7 +1043,7 @@ def check_domain(domain_name, expiration_days, interval_time=None, current_domai
     if days_remaining < expiration_days:
         EXPIRES_DOMAIN[str(domain_name).lower()] = days_remaining
 
-    return 1
+    return True
 
 
 def prepaire_domains_list(file):
@@ -1122,17 +1152,6 @@ def main():
     parser = process_cli()
     NAMESPACE = parser.parse_args(sys.argv[1:])
 
-    # prepaire_domains_list("e:\\_@ak545-projects\\_@Python\\domains0.txt")
-    # for item in G_DOMAINS_LIST:
-    #     print(item)
-    # sys.exit(-1)
-
-    # NAMESPACE.use_telegram = True
-    # NAMESPACE.domain = "google.ru"
-    # NAMESPACE.print_to_console = True
-    # NAMESPACE.file = "e:\\_@ak545-projects\\_@Python\\domains0.txt"
-    # NAMESPACE.use_only_external_whois = True
-
     if not NAMESPACE.no_banner:
         # Print banner
         if platform.platform().startswith('Windows'):
@@ -1163,6 +1182,9 @@ def main():
         )
         sys.exit(-1)
 
+    if NAMESPACE.long_format and (not NAMESPACE.print_to_console):
+        NAMESPACE.print_to_console = True
+
     if (not NAMESPACE.print_to_console and (NAMESPACE.file or NAMESPACE.domain)) and (
             (not NAMESPACE.use_telegram) and (not NAMESPACE.email_to)):
         print(
@@ -1171,9 +1193,6 @@ def main():
             f"Use --print-to-console or --use-email or/and --use-telegram"
         )
         sys.exit(-1)
-
-    if NAMESPACE.long_format and (not NAMESPACE.print_to_console):
-        NAMESPACE.print_to_console = True
 
     if NAMESPACE.email_ssl and (not NAMESPACE.email_to):
         print(f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
@@ -1252,7 +1271,7 @@ def main():
                     domain_name = domain
 
                     # Domain Check
-                    if check_domain(domain_name, expiration_days, interval_time, current_domain) == 0:
+                    if not check_domain(domain_name, expiration_days, interval_time, current_domain):
                         # If error - skip
                         continue
 
