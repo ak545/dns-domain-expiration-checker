@@ -10,7 +10,7 @@
 # Author of this fork: Andrey Klimov < ak545 at mail dot ru >
 # https://github.com/ak545
 #
-# Current Version: 0.2
+# Current Version: 0.2.1
 # Date: 22-03-2019
 #
 # License:
@@ -61,7 +61,7 @@ except ImportError:
 init(autoreset=True)
 
 # Global constants
-_VERSION = "0.2"
+_VERSION = "0.2.1"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -1131,26 +1131,13 @@ def prepaire_domains_list(file):
                 sys.exit(1)
 
 
-def main():
+def check_cli_logic():
     """
-    Main function
+    Check command line logic
     :return: None
     """
     global NAMESPACE
-    global EXPIRES_DOMAIN
-    global ERRORS_DOMAIN
-    global ERRORS2_DOMAIN
-    global G_DOMAINS_LIST
-    global G_DOMAINS_TOTAL
-
-    # Check Python Version
-    if sys.version_info < (3, 6):
-        print("Error. Python version 3.6 and above required")
-        sys.exit(-1)
-
-    # Parsing command line
-    parser = process_cli()
-    NAMESPACE = parser.parse_args(sys.argv[1:])
+    global TELEGRAM_PROXIES
 
     if not NAMESPACE.no_banner:
         # Print banner
@@ -1171,7 +1158,6 @@ def main():
         )
         print_namespase()
 
-    # Logical analysis of command line options
     if NAMESPACE.use_only_external_whois or NAMESPACE.use_extra_external_whois:
         whois_check()
 
@@ -1222,6 +1208,31 @@ def main():
 
     if NAMESPACE.print_to_console:
         print_heading()
+
+
+def main():
+    """
+    Main function
+    :return: None
+    """
+    global NAMESPACE
+    global EXPIRES_DOMAIN
+    global ERRORS_DOMAIN
+    global ERRORS2_DOMAIN
+    global G_DOMAINS_LIST
+    global G_DOMAINS_TOTAL
+
+    # Check Python Version
+    if sys.version_info < (3, 6):
+        print("Error. Python version 3.6 and above required")
+        sys.exit(-1)
+
+    # Parsing command line
+    parser = process_cli()
+    NAMESPACE = parser.parse_args(sys.argv[1:])
+
+    # Check command line logic
+    check_cli_logic()
 
     EXPIRES_DOMAIN = {}
     ERRORS_DOMAIN = []
