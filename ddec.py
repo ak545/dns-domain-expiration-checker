@@ -161,7 +161,7 @@ ERRORS_DOMAIN = [] # Common errors
 ERRORS2_DOMAIN = []  # limit connection
 
 # Command line parameters
-# NAMESPACE = None
+NAMESPACE = None
 
 # The number of days that are added to the expiration
 # date of the domain registration
