@@ -62,7 +62,7 @@ except ImportError:
 init(autoreset=True)
 
 # Global constants
-_VERSION = "0.2.2"
+__version__ = "0.2.2"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -627,7 +627,7 @@ def process_cli():
         "--version",
         action="version",
         help="Display the version number",
-        version="%(prog)s version: {}".format(_VERSION)
+        version="%(prog)s version: {}".format(__version__)
     )
     parent_group.add_argument(
         "-f",
@@ -1336,4 +1336,3 @@ if __name__ == "__main__":
     except Exception as e:
         print('Error: %s' % e, file=sys.stderr)
     sys.exit(rc)
-    
