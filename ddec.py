@@ -1143,7 +1143,7 @@ def check_cli_logic():
     global NAMESPACE
     global TELEGRAM_PROXIES
 
-    if not NAMESPACE.no_banner:
+    if NAMESPACE.print_to_console and not NAMESPACE.no_banner:
         # Print banner
         if platform.platform().startswith('Windows'):
             home_path = os.path.join(os.getenv('HOMEDRIVE'),
