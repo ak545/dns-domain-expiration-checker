@@ -64,7 +64,7 @@ Previously, you may need to update **pip** itself (Python module installer):
     or
     $ pip install --upgrade PySocks
 
-Depending on your Pyton environment, your actions will be slightly different, for example, you may need to specify the **--user** key (for **pip**) or use the **python3** and **pip3** commands instead of the **python** and **pip** commands. If you use environments, then most likely, you will need to do all of these actions after entering the appropriate environment.
+Depending on your Pyton environment, your actions will be slightly different, for example, you may need to specify the **--user** key (for **pip**) or use the **python3** and **pip3** commands instead of the **python** and **pip** commands. If you use [virtual environments](https://docs.python.org/3/library/venv.html), then most likely, you will need to do all of these actions after entering the appropriate environment.
 
 ## Usage
     $ ddec.py -h
@@ -486,6 +486,10 @@ Delete all tasks from user **user**, you can:
 
 ## How to add a script to Microsoft Windows Task Scheduler
 Ask for help to [documentation](https://docs.microsoft.com/en-us/windows/desktop/taskschd/schtasks)
+
+**Sample:**
+
+`schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
 
 ## Thanks for the idea
 To the author of the original script / Автору оригинального скрипта: Matty < matty91 at gmail dot com > [https://github.com/Matty9191](https://github.com/Matty9191)

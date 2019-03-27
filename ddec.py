@@ -10,7 +10,7 @@
 # Author of this fork: Andrey Klimov < ak545 at mail dot ru >
 # https://github.com/ak545
 #
-# Current Version: 0.2.1
+# Current Version: 0.2.2
 # Date: 22-03-2019
 #
 # License:
@@ -24,6 +24,7 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #  GNU General Public License for more details.
 
+from __future__ import unicode_literals
 import os
 import sys
 import platform
@@ -61,16 +62,19 @@ except ImportError:
 init(autoreset=True)
 
 # Global constants
-_VERSION = "0.2.1"
+_VERSION = "0.2.2"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
 FLR = Fore.LIGHTRED_EX
 FLC = Fore.LIGHTCYAN_EX
 FLY = Fore.LIGHTYELLOW_EX
-
 BLB = Back.LIGHTBLACK_EX
 BR = Back.RESET
+SDIM = Style.DIM
+SNORMAL = Style.NORMAL
+SBRIGHT = Style.BRIGHT
+SR = Style.RESET_ALL
 
 SEP = os.sep
 
@@ -157,7 +161,7 @@ ERRORS_DOMAIN = [] # Common errors
 ERRORS2_DOMAIN = []  # limit connection
 
 # Command line parameters
-NAMESPACE = {}
+# NAMESPACE = None
 
 # The number of days that are added to the expiration
 # date of the domain registration
@@ -1222,15 +1226,6 @@ def main():
     global G_DOMAINS_LIST
     global G_DOMAINS_TOTAL
 
-    # Check Python Version
-    if sys.version_info < (3, 6):
-        print("Error. Python version 3.6 and above required")
-        sys.exit(-1)
-
-    # Parsing command line
-    parser = process_cli()
-    NAMESPACE = parser.parse_args(sys.argv[1:])
-
     # Check command line logic
     check_cli_logic()
 
@@ -1324,4 +1319,21 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    rc = -1
+    # Check Python Version
+    if sys.version_info < (3, 6):
+        print("Error. Python version 3.6 and above required")
+        sys.exit(-1)
+
+    print(f"{SR}")
+
+    # Parsing command line
+    parser = process_cli()
+    NAMESPACE = parser.parse_args(sys.argv[1:])
+    try:
+        main()
+        rc = 0
+    except Exception as e:
+        print('Error: %s' % e, file=sys.stderr)
+    sys.exit(rc)
+    
