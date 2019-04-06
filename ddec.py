@@ -80,7 +80,7 @@ SEP = os.sep
 
 # SMTP options
 SMTP_SERVER = "localhost"
-SMTP_PORT = 25  # Default
+SMTP_PORT = 25
 
 # SMTP_SERVER = "smtp.gmail.com"
 # SMTP_PORT = 587  # For starttls
