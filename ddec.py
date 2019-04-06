@@ -80,10 +80,17 @@ SEP = os.sep
 
 # SMTP options
 SMTP_SERVER = "localhost"
-# SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 25  # Default
+
+# SMTP_SERVER = "smtp.gmail.com"
 # SMTP_PORT = 587  # For starttls
+
+# SMTP_SERVER = "smtp.mail.ru"
+# SMTP_PORT = 25  # Default
+
+# SMTP_SERVER = "smtp.yandex.ru"
 # SMTP_PORT = 465  # For SSL
+
 SMTP_SENDER = "root"
 SMTP_PASSWORD = "P@ssw0rd"
 
