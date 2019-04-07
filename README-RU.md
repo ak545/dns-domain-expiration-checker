@@ -470,11 +470,11 @@ Telegram API URL
 
 В файле задач создайте примерно такую запись (не используйте ключи **--print-to-console** и **--long-format**):
 
-    * 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
+    0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
 
 или
 
-    * 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1    
+    0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1    
 
 Указывайте полные пути к файлу данных и скрипту.
 

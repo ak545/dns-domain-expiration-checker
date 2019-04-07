@@ -465,11 +465,11 @@ If you, like me, do not like vim (I have not seen a single person who is fluent 
 
 In the task editor, create something like this (do not use keys **--print-to-console** and **--long-format**):
 
-    * 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
+    0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
 
 or
 
-    * 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
+    0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
 
 
 Specify the full paths to the data file and the script.
