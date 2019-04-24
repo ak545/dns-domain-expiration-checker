@@ -92,6 +92,9 @@ Depending on your Pyton environment, your actions will be slightly different, fo
     -x DAYS, --expire-days DAYS
                             Expiration threshold to check against (in days,
                             default is 60)
+    -s FLOAT, --cost-per-domain FLOAT
+                            The cost per one domain (in your currency, default is
+                            0.00)
     -t, --use-telegram    Send a warning message through the Telegram (default
                             is False)
     -p URL, --proxy URL   Proxy link (for Telegram only), for example:
@@ -107,8 +110,8 @@ Depending on your Pyton environment, your actions will be slightly different, fo
     -ee, --use-extra-external-whois
                             Use external whois utility for additional analysis
                             (default is False)
-    -nb, --no-banner      Do not print banner (default is False)
-    
+    -nb, --no-banner      Do not print banner (default is False)    
+
 ### Description of options
 **-h, --help**
 
@@ -123,10 +126,11 @@ Display the version number
 Path to the file with the list of domains (default is None)
 
 #### File format with a list of domains
-    domain [%days%] [sleep:%seconds%]
+    domain [%days%] [sleep:%seconds%] [cost:%cost%]
     domain [sleep:%seconds%] [%days%]
     domain [%days%]
     domain [sleep:%seconds%]
+    domain [cost:%cost%]
     domain
 
 **domain** - Domain name
@@ -134,6 +138,8 @@ Path to the file with the list of domains (default is None)
 **%days%** - An integer indicating how many days before the expiration of the domain registration to raise an alarm.
 
 **%seconds%** - An integer, the number of seconds to sleep in before analyzing the next domain. The keyword "**sleep:**" does not change. Spaces between this keyword and the number of seconds are not allowed.
+
+**%cost%** - The number that represents the cost of renewing a domain. The keyword "**cost:**" does not change. Spaces between this keyword and cost are not allowed.
 
 The file must be encoded in **UTF-8 without BOM**, the format of the new line: **Unix (0Ah)**
 
@@ -154,6 +160,7 @@ The file must be encoded in **UTF-8 without BOM**, the format of the new line: *
     # - expiration value in days (integer)
     # - interval value in seconds before proceeding to
     # the next check (sleep:integer)
+    # - the cost of renewing a domain (cost:float)
     #
     # For example:
     # ! Group 1
@@ -161,7 +168,7 @@ The file must be encoded in **UTF-8 without BOM**, the format of the new line: *
     # domain_name integer
     #
     # ! Group 2
-    # domain_name integer sleep:integer
+    # domain_name integer sleep:integer cost:float
     # domain_name sleep:integer integer
     # domain_name sleep:integer
     #
@@ -174,11 +181,15 @@ The file must be encoded in **UTF-8 without BOM**, the format of the new line: *
     # the default value or from the command line parameter
     # is used.
     #
+    # If the cost of renewing a domain is not specified,
+    # the default value is used or from the command
+    # line parameter
+    #
     #-------------------------------------------------------------
     
     ! The sample of the group header
     a.ru
-    linux.cafe 1000 sleep:8
+    linux.cafe 1000 sleep:8 cost:20.55
     cyberciti.biz sleep:10 70
     dotmobi.mobi 80
     spotch.com sleep:15
@@ -226,16 +237,17 @@ Time to sleep between whois queries (in seconds, default is 60)
 Expiration threshold to check against (in days, default is 60)
 How many days before the expiration of the domain registration start to warn.
 
+**-s FLOAT, --cost-per-domain FLOAT**
+
+The cost of renewing a domain (default is 0.00)
+
 **-t, --use-telegram**
 
 Send a warning message through the Telegram (default is False)
 
 **-p URL, --proxy URL**
 
-Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None)
-
-#### About blocking Telegram
-In Russia, Roskomnadzor instructs all providers to block the work of Telegram. I will not tell you how to override Telegram blocking.
+Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None). In Russia, Roskomnadzor instructs all providers to block the work of Telegram. I will not tell you how to override Telegram blocking.
 
 **-e EMAIL, --email-to EMAIL**
 
@@ -404,6 +416,15 @@ When sending whois requests to some whois servers (for example, to GoDaddy.com s
 The maximum waiting time for the output from the external utility whois (in seconds). After this time, the external whois process will be forcibly terminated. The script itself will continue its work.
 
     WHOIS_COMMAND_TIMEOUT = 10
+
+### The cost of domain renewal
+**G_CURRENCY_SYMBOL**
+
+Sets the national currency symbol
+    
+Samples:
+
+    G_CURRENCY_SYMBOL = '$'
 
 ### Parameters for estimating the time until the expiration of domain registration
 **G_SOON_ADD**

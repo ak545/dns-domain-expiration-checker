@@ -10,6 +10,7 @@
 # - имя домена (обязательно первым)
 # - значение истечения срока в днях (целое число)
 # - значение интервала в секундах перед тем как перейти к следующей проверке (sleep:целое число)
+# - стоимость продления домена (cost:float)
 #
 # Например:
 # ! Группа 1
@@ -17,7 +18,7 @@
 # имя_домена число
 #
 # ! Группа 2
-# имя_домена число sleep:число
+# имя_домена число sleep:число cost:float
 # имя_домена sleep:число число 
 # имя_домена sleep:число
 #
@@ -27,6 +28,9 @@
 # Если значение интервала в секундах перед тем как перейти к следующей проверке не задано,
 # используется значение по-умолчанию или из параметра командной строки
 #
+# Если значение стоимости продления домена не задано,
+# используется значение по-умолчанию или из параметра
+# командной строки
 #
 #
 # Example file with the list of domains
@@ -39,6 +43,7 @@
 # - domain name (required first)
 # - expiration value in days (integer)
 # - interval value in seconds before proceeding to the next check (sleep:integer)
+# - the cost of renewing a domain (cost:float)
 #
 # For example:
 # ! Group 1
@@ -46,7 +51,7 @@
 # domain_name integer
 #
 # ! Group 2
-# domain_name integer sleep:integer
+# domain_name integer sleep:integer cost:float
 # domain_name sleep:integer integer
 # domain_name sleep:integer
 #
@@ -56,11 +61,15 @@
 # If the interval value in seconds is not specified before moving on to the next check,
 # the default value or from the command line parameter is used.
 #
+# If the cost of renewing a domain is not specified,
+# the default value is used or from the command
+# line parameter
+#
 #----------------------------------------------------------------------------------------------------
 
 ! Any domains
 a.ru
-linux.cafe 220 sleep:8
+linux.cafe 220 sleep:8 cost:890.00
 cyberciti.biz sleep:10 70
 dotmobi.mobi 80
 spotch.com sleep:15
