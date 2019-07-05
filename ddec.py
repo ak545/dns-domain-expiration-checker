@@ -9,8 +9,8 @@
 # Author of this fork: Andrey Klimov < ak545 at mail dot ru >
 # https://github.com/ak545
 #
-# Current Version: 0.2.3
-# Date: 24-04-2019
+# Current Version: 0.2.4
+# Date: 05-07-2019 (dd-mm-yyyy)
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -61,7 +61,7 @@ except ImportError:
 init(autoreset=True)
 
 # Global constants
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -992,7 +992,7 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
             f"{exd}",
             ddl
         )
-    else:
+    elif NAMESPACE.print_to_console:
         print(
             dnn,
             f"{exd}",
@@ -1099,8 +1099,7 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
             else:
                 if domain_name not in ERRORS_DOMAIN:
                     ERRORS_DOMAIN.append(str(domain_name).lower())
-                if NAMESPACE.print_to_console:
-                    print_domain(domain_name, None, None, None, -1, -1, cost, current_domain, error)  # Error
+                print_domain(domain_name, None, None, None, -1, -1, cost, current_domain, error)  # Error
                 if current_domain < G_DOMAINS_TOTAL:
                     if interval_time:
                         if NAMESPACE.print_to_console:
@@ -1109,9 +1108,8 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
                 return False
 
     if (not whois_server) and (not registrar) and (not expiration_date):
-        if NAMESPACE.print_to_console:
-            print_domain(domain_name, whois_server, registrar,
-                         expiration_date, -2, -1, cost, current_domain, error)  # Free ?
+        print_domain(domain_name, whois_server, registrar,
+                        expiration_date, -2, -1, cost, current_domain, error)  # Free ?
         if current_domain < G_DOMAINS_TOTAL:
             if interval_time:
                 if NAMESPACE.print_to_console:
@@ -1120,9 +1118,8 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
         return False
 
     if not expiration_date:
-        if NAMESPACE.print_to_console:
-            print_domain(domain_name, whois_server, registrar,
-                         expiration_date, -1, -1, cost, current_domain, error)  # Error
+        print_domain(domain_name, whois_server, registrar,
+                        expiration_date, -1, -1, cost, current_domain, error)  # Error
         if current_domain < G_DOMAINS_TOTAL:
             if interval_time:
                 if NAMESPACE.print_to_console:
@@ -1137,9 +1134,8 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
 
     days_remaining = calculate_expiration_days(expiration_date_min)
 
-    if NAMESPACE.print_to_console:
-        print_domain(domain_name, whois_server, registrar, expiration_date_min, days_remaining,
-                     expiration_days, cost, current_domain, error)
+    print_domain(domain_name, whois_server, registrar, expiration_date_min, days_remaining,
+                    expiration_days, cost, current_domain, error)
 
     if days_remaining < expiration_days:
         EXPIRES_DOMAIN[str(domain_name).lower()] = days_remaining
