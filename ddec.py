@@ -645,8 +645,7 @@ def send_email(message):
                     host=SMTP_SERVER, port=SMTP_PORT, context=context)
         else:
             server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-
-        server.ehlo()  # Can be omitted
+            server.ehlo()  # Can be omitted
 
         if NAMESPACE.email_starttls:
             server.starttls(context=context)  # Secure the connection
