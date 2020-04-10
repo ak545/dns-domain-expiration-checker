@@ -222,13 +222,14 @@ def whois_check():
     os_env_path = os.environ.get(s_path).split(delemiter)
     for item in os_env_path:
         str_tmp = item
-        if str_tmp[-1] != SEP:
-            str_tmp += SEP + "whois"
-            if sys.platform == "win32":
-                str_tmp += ".exe"
-        if Path(str_tmp).is_file():
-            whois_found = True
-            break
+        if str_tmp != '':
+            if str_tmp[-1] != SEP:
+                str_tmp += SEP + "whois"
+                if sys.platform == "win32":
+                    str_tmp += ".exe"
+            if Path(str_tmp).is_file():
+                whois_found = True
+                break
 
     if whois_found:
         if not NAMESPACE.no_banner:
