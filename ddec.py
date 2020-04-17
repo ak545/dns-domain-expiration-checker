@@ -9,7 +9,7 @@
 # Author of this fork: Andrey Klimov < ak545 at mail dot ru >
 # https://github.com/ak545
 #
-# Current Version: 0.2.4
+# Current Version: 0.2.5
 # Date: 05-07-2019 (dd-mm-yyyy)
 #
 # License:
@@ -60,8 +60,15 @@ except ImportError:
 # Init colorama
 init(autoreset=True)
 
+# Check Python Version
+if sys.version_info < (3, 6):
+    print("Error. Python version 3.6 or later required to run this script")
+    print("Your version:", sys.version)
+    sys.exit(-1)
+
+
 # Global constants
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -1426,20 +1433,9 @@ def main():
 
 
 if __name__ == "__main__":
-    rc = -1
-    # Check Python Version
-    if sys.version_info < (3, 6):
-        print("Error. Python version 3.6 and above required")
-        sys.exit(-1)
-
     print(f"{SR}")
 
     # Parsing command line
     parser = process_cli()
     NAMESPACE = parser.parse_args(sys.argv[1:])
-    try:
-        main()
-        rc = 0
-    except Exception as e:
-        print('Error: %s' % e, file=sys.stderr)
-    sys.exit(rc)
+    main()
