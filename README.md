@@ -28,7 +28,7 @@ Of course, you need to install it yourself first [Python](https://www.python.org
 For Apple macOS:
 
     $ xcode-select --install
-    
+
 Install brew:
 
     $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
@@ -50,7 +50,7 @@ Previously, you may need to update **pip** itself (Python module installer):
     $ pip install python-whois
     $ pip install python-dateutil
     $ pip install colorama
-    
+
     $ pip install requests[socks]
     or
     $ pip install PySocks
@@ -110,7 +110,7 @@ Depending on your Pyton environment, your actions will be slightly different, fo
     -ee, --use-extra-external-whois
                             Use external whois utility for additional analysis
                             (default is False)
-    -nb, --no-banner      Do not print banner (default is False)    
+    -nb, --no-banner      Do not print banner (default is False)
 
 ### Description of options
 **-h, --help**
@@ -118,7 +118,7 @@ Depending on your Pyton environment, your actions will be slightly different, fo
 Help
 
 **-v, --version**
-    
+
 Display the version number
 
 **-f FILE, --file FILE**
@@ -186,7 +186,7 @@ The file must be encoded in **UTF-8 without BOM**, the format of the new line: *
     # line parameter
     #
     #-------------------------------------------------------------
-    
+
     ! The sample of the group header
     a.ru
     linux.cafe 1000 sleep:8 cost:20.55
@@ -211,7 +211,7 @@ The file must be encoded in **UTF-8 without BOM**, the format of the new line: *
     twitter.com
 
     ! Youtube
-    youtube.tv  
+    youtube.tv
     youtube.com
 
 **-d STRING, --domain STRING**
@@ -331,6 +331,8 @@ Note! For the full work of the utility **whois** from the package **cygwin** fil
 
 Some options are inside the script. There is no point in putting them in the parameters, since you only need to configure them once, and then successfully forget about them.
 
+You may also set environment variables of the same name for SMTP and TELEGRAM to avoid modifying the script.
+
 ### SMTP options
 **SMTP_SERVER**
 
@@ -346,7 +348,7 @@ Samples:
 SMTP port
 
 Samples:
-    
+
     SMTP_PORT = 587  # For starttls
     SMTP_PORT = 465  # For SSL
     SMTP_PORT = 25   # Default
@@ -368,21 +370,21 @@ Samples:
     SMTP_PASSWORD = "P@ssw0rd"
 
 ### Telegram options
-**MY_TOKEN**
+**TELEGRAM_TOKEN**
 
 Token Telegram bot
 
 Samples:
 
-    MY_TOKEN = 'NNNNNNNNN:NNNSSSSaaaaaFFFFFEEE3gggggQQWFFFFF01z'
+    TELEGRAM_TOKEN = 'NNNNNNNNN:NNNSSSSaaaaaFFFFFEEE3gggggQQWFFFFF01z'
 
-**CHAT_ID**
+**TELEGRAM_CHAT_ID**
 
 Telegram Channel ID
 
 Samples:
 
-    CHAT_ID = '-NNNNNNNNN'
+    TELEGRAM_CHAT_ID = '-NNNNNNNNN'
 
 Get help with Telegram API:
 [https://core.telegram.org/bots](https://core.telegram.org/bots)
@@ -394,7 +396,7 @@ Telegram API URL
 
 Samples:
 
-    TELEGRAM_URL = "https://api.telegram.org/bot" + MY_TOKEN + "/"
+    TELEGRAM_URL = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/"
 
 ### External utility whois options
 **WHOIS_COMMAND**
@@ -421,7 +423,7 @@ The maximum waiting time for the output from the external utility whois (in seco
 **G_CURRENCY_SYMBOL**
 
 Sets the national currency symbol
-    
+
 Samples:
 
     G_CURRENCY_SYMBOL = '$'
@@ -448,16 +450,16 @@ Your home folder: **/home/user**
 The folder where this script is located: **/home/user/py**
 
 To run the script directly, run the command:
-    
+
     $ chmod +x /home/user/py/ddec.py
 
 Adjust in the first line of the script [Shebang (Unix)](https://en.wikipedia.org/wiki/Shebang_(Unix)), eg:
 
 Show the path where python is located:
-    
+
     $ which python
     $ which python3
-    
+
 Correction python path in Shebang:
 
     #!/usr/bin/python
