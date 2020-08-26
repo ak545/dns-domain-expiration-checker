@@ -290,11 +290,11 @@ For Ubuntu/Debian:
     $ sudo apt update && sudo apt upgrade
     $ sudo apt install whois
 
-For RHEL 6.x/CentOS 6.x:
+For RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x:
 
     $ sudo yum install jwhois
 
-For RHEL 7.x/CentOS 7.x/Fedora 22 и выше:
+For RHEL 8.x/CentOS 8.x/Fedora 22 and higher:
 
     $ sudo dnf install jwhois
 
@@ -340,8 +340,10 @@ SMTP server address
 
 Samples:
 
-    SMTP_SERVER = "localhost"
-    SMTP_SERVER = "smtp.gmail.com"
+```python
+    SMTP_SERVER = os.getenv("SMTP_SERVER", "localhost")
+    # SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+```
 
 **SMTP_PORT**
 
@@ -349,9 +351,11 @@ SMTP port
 
 Samples:
 
-    SMTP_PORT = 587  # For starttls
-    SMTP_PORT = 465  # For SSL
-    SMTP_PORT = 25   # Default
+```python
+    # SMTP_PORT = int(os.getenv("SMTP_PORT", 587))  # For starttls
+    # SMTP_PORT = int(os.getenv("SMTP_PORT", 465))  # For SSL
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 25))   # Default
+```
 
 **SMTP_SENDER**
 
@@ -359,7 +363,9 @@ Email address of the sender
 
 Samples:
 
-    SMTP_SENDER = "user@gmail.com"
+```python
+    SMTP_SENDER = os.getenv("SMTP_SENDER", "user@gmail.com")
+```
 
 **SMTP_PASSWORD**
 
@@ -367,7 +373,9 @@ SMTP password
 
 Samples:
 
-    SMTP_PASSWORD = "P@ssw0rd"
+```python
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "P@ssw0rd")
+```
 
 ### Telegram options
 **TELEGRAM_TOKEN**
@@ -376,7 +384,9 @@ Token Telegram bot
 
 Samples:
 
+```python
     TELEGRAM_TOKEN = 'NNNNNNNNN:NNNSSSSaaaaaFFFFFEEE3gggggQQWFFFFF01z'
+```
 
 **TELEGRAM_CHAT_ID**
 
@@ -384,7 +394,9 @@ Telegram Channel ID
 
 Samples:
 
+```python
     TELEGRAM_CHAT_ID = '-NNNNNNNNN'
+```
 
 Get help with Telegram API:
 [https://core.telegram.org/bots](https://core.telegram.org/bots)
@@ -396,7 +408,9 @@ Telegram API URL
 
 Samples:
 
+```python
     TELEGRAM_URL = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/"
+```
 
 ### External utility whois options
 **WHOIS_COMMAND**
@@ -405,9 +419,11 @@ The command to run the external utility whois
 
 Samples:
 
+```python
     WHOIS_COMMAND = "whois"
-    WHOIS_COMMAND = "/usr/bin/whois"
-    WHOIS_COMMAND = "c:\\cygwin64\\bin\\whois.exe"
+    # WHOIS_COMMAND = "/usr/bin/whois"
+    # WHOIS_COMMAND = "c:\\cygwin64\\bin\\whois.exe"
+```
 
 Note: Do not use the similar whois utility from author Mark Russinovich for Microsoft Windows.
 When sending whois requests to some whois servers (for example, to GoDaddy.com servers), it may hang or return an incorrect result.
@@ -417,7 +433,9 @@ When sending whois requests to some whois servers (for example, to GoDaddy.com s
 
 The maximum waiting time for the output from the external utility whois (in seconds). After this time, the external whois process will be forcibly terminated. The script itself will continue its work.
 
+```python
     WHOIS_COMMAND_TIMEOUT = 10
+```
 
 ### The cost of domain renewal
 **G_CURRENCY_SYMBOL**
@@ -426,7 +444,9 @@ Sets the national currency symbol
 
 Samples:
 
+```python
     G_CURRENCY_SYMBOL = '$'
+```
 
 ### Parameters for estimating the time until the expiration of domain registration
 **G_SOON_ADD**
@@ -436,7 +456,9 @@ These days are added to the --expire-days parameter (or to the same value in the
 
 Samples:
 
+```python
     G_SOON_ADD = 21
+```
 
 If --expire-days (or a similar value in the file of domain name lists) is 60 days, then 81 days before the end of the domain registration period (60 + 21), this domain will be in the "Soon" category. This option only affects how the domain will be printed in the console. No messages will be sent.
 
@@ -458,6 +480,9 @@ Adjust in the first line of the script [Shebang (Unix)](https://en.wikipedia.org
 Show the path where python is located:
 
     $ which python
+
+or
+
     $ which python3
 
 Correction python path in Shebang:
@@ -485,6 +510,12 @@ If you, like me, do not like vim (I have not seen a single person who is fluent 
 
     $ EDITOR=nano crontab -u user -e
     $ EDITOR=mcedit crontab -u user -e
+
+or
+
+    $ VISUAL=nano crontab -u user -e
+    $ VISUAL=mcedit crontab -u user -e
+
 
 In the task editor, create something like this (do not use keys **--print-to-console** and **--long-format**):
 
@@ -526,11 +557,20 @@ I, the author of this python script, wrote this script exclusively for my needs.
 You can make any changes to the script code and fork this script, provided that the link to me and [Matty](https://github.com/Matty9191) is indicated as a source of your inspiration.
 
 ## Postscriptum
-- The script was tested in Microsoft Windows 10, Linux Fedora 29, Linux Ubuntu Descktop 18.10, Linux CentOS 6/7, Linux Manjaro 18.0.2.
+- The script was tested in Microsoft Windows 10, Linux Fedora 29/30/31/32, Linux Ubuntu Descktop 18.04/20.04, Linux CentOS 6/7/8, Linux Manjaro 18.0.2.
 - Sorry for my bad English.
 - The program code of the script is not perfect. But please forgive me for that. At the time of writing this Python script, I have been studying for only two weeks. I like this programming language, it is much simpler and at the same time more powerful than other programming languages that I own.
 - All recommendations given by me for Apple macOS may contain inaccuracies. Sorry, I don’t have an Apple macBook on hand (but what if someone gives it to me?).
 - Glory to the E = mc &sup2; !
 - I wish you all good luck!
+
+## A final plea
+It's time to put an end to Facebook. Working there is not ethically neutral: every day that you go into work, you are doing something wrong. If you have a Facebook account, delete it. If you work at Facebook, quit.
+
+And let us not forget that the National Security Agency must be destroyed.
+
+*(c) [David Fifield](mailto:david@bamsoftware.com)*
+
+---
 
 > Best regards, ak545 ( ru.mail&copy;ak545&sup2; )

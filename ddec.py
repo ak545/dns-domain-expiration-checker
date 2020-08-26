@@ -9,8 +9,13 @@
 # Author of this fork: Andrey Klimov < ak545 at mail dot ru >
 # https://github.com/ak545
 #
-# Current Version: 0.2.5
-# Date: 05-07-2019 (dd-mm-yyyy)
+# Thanks to:
+# Carl Mercier
+# https://github.com/cmer
+#
+# Current Version: 0.2.6
+# Creation Date: 2019-07-05
+# Last Fix Date: 2020-08-26
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -68,7 +73,7 @@ if sys.version_info < (3, 6):
 
 
 # Global constants
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -88,22 +93,22 @@ SEP = os.sep
 SMTP_SERVER = os.getenv("SMTP_SERVER", "localhost")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 25))
 
-# SMTP_SERVER = "smtp.gmail.com"
-# SMTP_PORT = 587  # For starttls
+# SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+# SMTP_PORT = int(os.getenv("SMTP_PORT", 587))  # For starttls
 
-# SMTP_SERVER = "smtp.mail.ru"
-# SMTP_PORT = 25  # Default
+# SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.mail.ru")
+# SMTP_PORT = int(os.getenv("SMTP_PORT", 25))  # Default
 
-# SMTP_SERVER = "smtp.yandex.ru"
-# SMTP_PORT = 465  # For SSL
+# SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.yandex.ru")
+# SMTP_PORT = int(os.getenv("SMTP_PORT", 465))  # For SSL
 
-SMTP_SENDER = os.getenv("SMTP_SERVER", "root")
+SMTP_SENDER = os.getenv("SMTP_SENDER", "root")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "P@ssw0rd")
+
 if str(os.getenv("SMTP_CHECK_SSL_HOSTNAME")) == "0":
     SMTP_CHECK_SSL_HOSTNAME = False
 else:
     SMTP_CHECK_SSL_HOSTNAME = True
-
 
 REQUEST_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -179,7 +184,7 @@ ERRORS_DOMAIN = []  # Common errors
 ERRORS2_DOMAIN = []  # limit connection
 
 # Command line parameters
-NAMESPACE = None
+CLI = None
 
 # The number of days that are added to the expiration
 # date of the domain registration
@@ -193,6 +198,7 @@ G_DOMAINS_LIST = []
 
 # Currency symbol
 G_CURRENCY_SYMBOL = '$'
+# G_CURRENCY_SYMBOL = '₽'
 
 # Counters:
 # Total Domains
@@ -222,7 +228,6 @@ def whois_check():
     External whois availability check
     :return: None
     """
-    global NAMESPACE
     str_tmp = ""
     whois_found = False
     if sys.platform == "win32":
@@ -244,7 +249,7 @@ def whois_check():
                 break
 
     if whois_found:
-        if not NAMESPACE.no_banner:
+        if not CLI.no_banner:
             print(
                 f"\tThe {FLG}whois{FR} found in: {FLW}{str_tmp}"
             )
@@ -289,7 +294,6 @@ def make_whois_query(domain):
     :param domain: string
     :return: date, string, string, boolean (expiration_date, registrar, whois_server, error)
     """
-    global WHOIS_COMMAND_TIMEOUT
     global ERRORS_DOMAIN
 
     try:
@@ -393,13 +397,6 @@ def send_expires_dict_telegram():
     Sending a message through the Telegram bot.
     :return: string
     """
-    global EXPIRES_DOMAIN
-    global ERRORS_DOMAIN
-    global ERRORS2_DOMAIN
-    global G_TOTAL_COST_SOON
-    global G_TOTAL_COST_EXPIRE
-    global G_CURRENCY_SYMBOL
-
     g_total_cost = G_TOTAL_COST_SOON + G_TOTAL_COST_EXPIRE
 
     if (len(EXPIRES_DOMAIN) == 0) and (len(ERRORS_DOMAIN) == 0) and (len(ERRORS2_DOMAIN) == 0):
@@ -463,20 +460,13 @@ def send_telegram(message):
     :param message: string
     :return: string
     """
-    global TELEGRAM_URL
-    global TELEGRAM_CHAT_ID
-    global REQUEST_HEADERS
-    global TELEGRAM_PROXIES
-
-    params = {'TELEGRAM_chat_id': TELEGRAM_CHAT_ID, 'parse_mode': 'html', 'text': message}
-
+    params = {'chat_id': TELEGRAM_CHAT_ID, 'parse_mode': 'html', 'text': message}
     if len(TELEGRAM_PROXIES) > 0:
         response = requests.post(TELEGRAM_URL + 'sendMessage', data=params, proxies=TELEGRAM_PROXIES,
                                  headers=REQUEST_HEADERS)
     else:
         response = requests.post(TELEGRAM_URL + 'sendMessage', data=params,
                                  headers=REQUEST_HEADERS)
-
     return response
 
 
@@ -485,15 +475,6 @@ def send_expires_dict_email():
     Preparing the contents of an email to send.
     :return: None
     """
-    global NAMESPACE
-    global EXPIRES_DOMAIN
-    global ERRORS_DOMAIN
-    global ERRORS2_DOMAIN
-    global SMTP_SENDER
-    global G_TOTAL_COST_SOON
-    global G_TOTAL_COST_EXPIRE
-    global G_CURRENCY_SYMBOL
-
     g_total_cost = G_TOTAL_COST_SOON + G_TOTAL_COST_EXPIRE
 
     if (len(EXPIRES_DOMAIN) == 0) and (len(ERRORS_DOMAIN) == 0) and (len(ERRORS2_DOMAIN) == 0):
@@ -501,7 +482,7 @@ def send_expires_dict_email():
 
     msg = MIMEMultipart("alternative")
     msg['From'] = SMTP_SENDER
-    msg['To'] = NAMESPACE.email_to
+    msg['To'] = CLI.email_to
     msg['Subject'] = "Expiring domains"
 
     body_text = "Expiring domains\n%BODY%"
@@ -640,35 +621,31 @@ def send_email(message):
     :param message: string
     :return: None
     """
-    global NAMESPACE
-    global SMTP_SERVER
-    global SMTP_PORT
-    global SMTP_SENDER
-    global SMTP_PASSWORD
-
     server = None
     context = None
     # Try to log in to server and send email
     try:
-        if NAMESPACE.email_ssl or NAMESPACE.email_starttls:
+        if CLI.email_ssl or CLI.email_starttls:
             # Create a secure SSL context
             context = ssl.create_default_context()
             context.check_hostname = SMTP_CHECK_SSL_HOSTNAME
-
-            if NAMESPACE.email_ssl:
+            if CLI.email_ssl:
                 server = smtplib.SMTP_SSL(
-                    host=SMTP_SERVER, port=SMTP_PORT, context=context)
+                    host=SMTP_SERVER,
+                    port=SMTP_PORT,
+                    context=context
+                )
             context.verify_mode = ssl.CERT_REQUIRED
 
         if server is None:
             server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
 
-        if NAMESPACE.email_starttls:
+        if CLI.email_starttls:
             server.starttls(context=context)  # Secure the connection
 
         server.ehlo()  # Can be omitted
         server.login(SMTP_SENDER, SMTP_PASSWORD)
-        server.sendmail(SMTP_SENDER, NAMESPACE.email_to, message)
+        server.sendmail(SMTP_SENDER, CLI.email_to, message)
     except Exception as e:
         # Print any error messages to stdout
         print(f"{FLR}{e}")
@@ -687,7 +664,7 @@ def process_cli():
         A simple python script to display or notify a user by email and/or via Telegram
         about the status of the domain and the expiration date.
         """,
-        epilog="(c) AK545 (Andrey Klimov) 2019, e-mail: ak545@mail.ru",
+        epilog="(c) AK545 (Andrey Klimov) 2019..2020, e-mail: ak545 at mail dot ru",
         add_help=False
     )
     parent_group = parser.add_argument_group(
@@ -818,30 +795,29 @@ def print_namespase():
     Print preset options to console
     :return: None
     """
-    global NAMESPACE
     use_internal_whois = True
 
-    if NAMESPACE.use_only_external_whois:
+    if CLI.use_only_external_whois:
         use_internal_whois = False
 
     print(
         f"\tPreset options\n"
         f"\t-------------------------\n"
-        f"\tFile                     : {NAMESPACE.file}\n"
-        f"\tDomain                   : {NAMESPACE.domain}\n"
-        f"\tPrint to console         : {NAMESPACE.print_to_console}\n"
-        f"\tLong Format              : {NAMESPACE.long_format}\n"
-        f"\tInterval Time            : {NAMESPACE.interval_time}\n"
-        f"\tExpire Days              : {NAMESPACE.expire_days}\n"
-        f"\tUse Telegram             : {NAMESPACE.use_telegram}\n"
-        f"\tProxy for Telegram       : {NAMESPACE.proxy}\n"
-        f"\tEmail to                 : {NAMESPACE.email_to}\n"
-        f"\tEmail SSL                : {NAMESPACE.email_ssl}\n"
-        f"\tEmail STARTTLS           : {NAMESPACE.email_starttls}\n"
+        f"\tFile                     : {CLI.file}\n"
+        f"\tDomain                   : {CLI.domain}\n"
+        f"\tPrint to console         : {CLI.print_to_console}\n"
+        f"\tLong Format              : {CLI.long_format}\n"
+        f"\tInterval Time            : {CLI.interval_time}\n"
+        f"\tExpire Days              : {CLI.expire_days}\n"
+        f"\tUse Telegram             : {CLI.use_telegram}\n"
+        f"\tProxy for Telegram       : {CLI.proxy}\n"
+        f"\tEmail to                 : {CLI.email_to}\n"
+        f"\tEmail SSL                : {CLI.email_ssl}\n"
+        f"\tEmail STARTTLS           : {CLI.email_starttls}\n"
         f"\tUse internal whois       : {use_internal_whois}\n"
-        f"\tUse only external whois  : {NAMESPACE.use_only_external_whois}\n"
-        f"\tUse extra external whois : {NAMESPACE.use_extra_external_whois}\n"
-        f"\tPrint banner             : {NAMESPACE.no_banner}\n"
+        f"\tUse only external whois  : {CLI.use_only_external_whois}\n"
+        f"\tUse extra external whois : {CLI.use_extra_external_whois}\n"
+        f"\tPrint banner             : {CLI.no_banner}\n"
         f"\t-------------------------"
     )
 
@@ -851,15 +827,13 @@ def print_hr():
     Pretty print a formatted horizontal line on stdout
     :return: None
     """
-    global NAMESPACE
-
     dn = "{:-<42}".format("")
     wis = "{:-<40}".format("")
     reg = "{:-<60}".format("")
     exd = "{:-<20}".format("")
     dl = "{:-<17}".format("")
 
-    if NAMESPACE.long_format:
+    if CLI.long_format:
         print(
             f"{FLW}{dn}{FR}",
             f"{FLW}{wis}{FR}",
@@ -880,8 +854,6 @@ def print_heading():
     Pretty print a formatted heading on stdout
     :return: None
     """
-    global NAMESPACE
-
     dn = "{:<42}".format("Domain Name")
     wis = "{:<40}".format("Whois server")
     reg = "{:<60}".format("Registrar")
@@ -890,7 +862,7 @@ def print_heading():
 
     print_hr()
 
-    if NAMESPACE.long_format:
+    if CLI.long_format:
         print(
             f"{FLW}{dn}{FR}",
             f"{FLW}{wis}{FR}",
@@ -922,8 +894,6 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
     :param error: integer
     :return: None
     """
-    global NAMESPACE
-    global G_SOON_ADD
     global G_DOMAINS_VALID
     global G_DOMAINS_SOON
     global G_DOMAINS_EXPIRE
@@ -1000,7 +970,7 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
     number_domain = "{:>5}".format(current_domain)
     dnn = "{:<42}".format(number_domain + ". " + dnn)
 
-    if NAMESPACE.long_format:
+    if CLI.long_format:
         print(
             dnn,
             f"{wis}",
@@ -1008,7 +978,7 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
             f"{exd}",
             ddl
         )
-    elif NAMESPACE.print_to_console:
+    elif CLI.print_to_console:
         print(
             dnn,
             f"{exd}",
@@ -1021,15 +991,6 @@ def print_stat():
     Print stat to console
     :return: None
     """
-    global G_DOMAINS_TOTAL
-    global G_DOMAINS_VALID
-    global G_DOMAINS_SOON
-    global G_DOMAINS_EXPIRE
-    global G_DOMAINS_ERROR
-    global G_TOTAL_COST_SOON
-    global G_TOTAL_COST_EXPIRE
-    global G_CURRENCY_SYMBOL
-
     print(
         f"The Result\n"
         f"---------------\n"
@@ -1064,17 +1025,15 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
     :param current_domain: integer
     :return: False - Error, True - Successfully
     """
-    global NAMESPACE
     global EXPIRES_DOMAIN
     global ERRORS_DOMAIN
     global ERRORS2_DOMAIN
-    global G_DOMAINS_TOTAL
 
     is_internal_error = False
     if not interval_time:
-        interval_time = NAMESPACE.interval_time
+        interval_time = CLI.interval_time
 
-    if NAMESPACE.use_only_external_whois:
+    if CLI.use_only_external_whois:
         expiration_date, registrar, whois_server, error = make_whois_query(
             domain_name)
     else:
@@ -1094,7 +1053,7 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
             registrar = w.get("registrar")
             whois_server = w.get("whois_server")
         else:
-            if NAMESPACE.use_extra_external_whois:
+            if CLI.use_extra_external_whois:
                 expiration_date_e, registrar_e, whois_server_e, error = make_whois_query(
                     domain_name)
                 if error:
@@ -1118,7 +1077,7 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
                 print_domain(domain_name, None, None, None, -1, -1, cost, current_domain, error)  # Error
                 if current_domain < G_DOMAINS_TOTAL:
                     if interval_time:
-                        if NAMESPACE.print_to_console:
+                        if CLI.print_to_console:
                             print(f"\tWait {interval_time} sec...\r", end="")
                         time.sleep(interval_time)
                 return False
@@ -1128,7 +1087,7 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
                         expiration_date, -2, -1, cost, current_domain, error)  # Free ?
         if current_domain < G_DOMAINS_TOTAL:
             if interval_time:
-                if NAMESPACE.print_to_console:
+                if CLI.print_to_console:
                     print(f"\tWait {interval_time} sec...\r", end="")
                 time.sleep(interval_time)
         return False
@@ -1138,7 +1097,7 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
                         expiration_date, -1, -1, cost, current_domain, error)  # Error
         if current_domain < G_DOMAINS_TOTAL:
             if interval_time:
-                if NAMESPACE.print_to_console:
+                if CLI.print_to_console:
                     print(f"\tWait {interval_time} sec...\r", end="")
                 time.sleep(interval_time)
         return False
@@ -1165,7 +1124,6 @@ def prepaire_domains_list(file):
     :param file: string
     :return: None
     """
-    global NAMESPACE
     global G_DOMAINS_LIST
     global G_DOMAINS_TOTAL
 
@@ -1182,8 +1140,8 @@ def prepaire_domains_list(file):
                 "group": "",
                 "domain": "",
                 "expire_days": -1,
-                "interval_time": NAMESPACE.interval_time,
-                "cost": NAMESPACE.cost_per_domain,
+                "interval_time": CLI.interval_time,
+                "cost": CLI.cost_per_domain,
             })
 
             try:
@@ -1242,7 +1200,7 @@ def prepaire_domains_list(file):
                                     # the expiration value in days
                                     domain_dict["expire_days"] = int(item)
                         else:
-                            domain_dict["expire_days"] = NAMESPACE.expire_days
+                            domain_dict["expire_days"] = CLI.expire_days
 
                         G_DOMAINS_LIST.append(domain_dict.copy())
 
@@ -1257,10 +1215,10 @@ def check_cli_logic():
     Check command line logic
     :return: None
     """
-    global NAMESPACE
+    global CLI
     global TELEGRAM_PROXIES
 
-    if NAMESPACE.print_to_console and not NAMESPACE.no_banner:
+    if CLI.print_to_console and not CLI.no_banner:
         # Print banner
         if platform.platform().startswith('Windows'):
             home_path = os.path.join(os.getenv('HOMEDRIVE'),
@@ -1279,21 +1237,21 @@ def check_cli_logic():
         )
         print_namespase()
 
-    if NAMESPACE.use_only_external_whois or NAMESPACE.use_extra_external_whois:
+    if CLI.use_only_external_whois or CLI.use_extra_external_whois:
         whois_check()
 
-    if NAMESPACE.use_only_external_whois and NAMESPACE.use_extra_external_whois:
+    if CLI.use_only_external_whois and CLI.use_extra_external_whois:
         print(
             f"{FLR}One of the parameters is superfluous. "
             f"Use either --use-only-external-whois or --use-extra-external-whois"
         )
         sys.exit(-1)
 
-    if NAMESPACE.long_format and (not NAMESPACE.print_to_console):
-        NAMESPACE.print_to_console = True
+    if CLI.long_format and (not CLI.print_to_console):
+        CLI.print_to_console = True
 
-    if (not NAMESPACE.print_to_console and (NAMESPACE.file or NAMESPACE.domain)) and (
-            (not NAMESPACE.use_telegram) and (not NAMESPACE.email_to)):
+    if (not CLI.print_to_console and (CLI.file or CLI.domain)) and (
+            (not CLI.use_telegram) and (not CLI.email_to)):
         print(
             f"{FLR}You must use at least one of the notification methods "
             f"(email, telegram or console)\n"
@@ -1301,36 +1259,36 @@ def check_cli_logic():
         )
         sys.exit(-1)
 
-    if NAMESPACE.email_ssl and (not NAMESPACE.email_to):
+    if CLI.email_ssl and (not CLI.email_to):
         print(
             f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
         sys.exit(-1)
 
-    if NAMESPACE.email_starttls and (not NAMESPACE.email_to):
+    if CLI.email_starttls and (not CLI.email_to):
         print(
             f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
         sys.exit(-1)
 
-    if NAMESPACE.email_starttls and NAMESPACE.email_ssl and NAMESPACE.email_to:
+    if CLI.email_starttls and CLI.email_ssl and CLI.email_to:
         print(f"{FLR}The contradiction of options. You must choose one thing: either --email-ssl or "
               f"--email-starttls or do not use either one or the other")
         sys.exit(-1)
 
-    if NAMESPACE.file and NAMESPACE.domain:
+    if CLI.file and CLI.domain:
         print(
             f"{FLR}One of the parameters is superfluous. Use either --file or --domain")
         sys.exit(-1)
 
-    if NAMESPACE.proxy and (not NAMESPACE.use_telegram):
+    if CLI.proxy and (not CLI.use_telegram):
         print(f"{FLR}The proxy setting is for telegram only")
         sys.exit(-1)
 
-    if NAMESPACE.proxy and NAMESPACE.use_telegram:
+    if CLI.proxy and CLI.use_telegram:
         TELEGRAM_PROXIES.clear()
-        TELEGRAM_PROXIES['http'] = NAMESPACE.proxy
-        TELEGRAM_PROXIES['https'] = NAMESPACE.proxy
+        TELEGRAM_PROXIES['http'] = CLI.proxy
+        TELEGRAM_PROXIES['https'] = CLI.proxy
 
-    if NAMESPACE.print_to_console:
+    if CLI.print_to_console:
         print_heading()
 
 
@@ -1339,12 +1297,9 @@ def main():
     Main function
     :return: None
     """
-    global NAMESPACE
     global EXPIRES_DOMAIN
     global ERRORS_DOMAIN
     global ERRORS2_DOMAIN
-    global G_DOMAINS_LIST
-    global G_DOMAINS_TOTAL
 
     # Check command line logic
     check_cli_logic()
@@ -1353,22 +1308,22 @@ def main():
     ERRORS_DOMAIN = []
     ERRORS2_DOMAIN = []
 
-    if NAMESPACE.file:
+    if CLI.file:
         # Source data from file
-        file = str(NAMESPACE.file).strip()
+        file = str(CLI.file).strip()
         if not Path(file).is_file():
             print(f"{FLR}File {FLY}{file}{FLR} not found")
             sys.exit(-1)
 
         # Prepaire domains list
-        prepaire_domains_list(NAMESPACE.file)
+        prepaire_domains_list(CLI.file)
 
         if G_DOMAINS_TOTAL > 0:
             i = 0
             current_domain = 0
 
             for item in G_DOMAINS_LIST:
-                expiration_days = NAMESPACE.expire_days
+                expiration_days = CLI.expire_days
                 group = item["group"]
                 domain = item["domain"]
                 expire_days = item["expire_days"]
@@ -1379,10 +1334,10 @@ def main():
                     i += 1
                     si = "{:>4}".format(i)
                     if i == 1:
-                        if NAMESPACE.print_to_console:
+                        if CLI.print_to_console:
                             print(f"{si}. {FLW}{group}")
                     else:
-                        if NAMESPACE.print_to_console:
+                        if CLI.print_to_console:
                             print(f" " * 40, end="")
                             print(f"\n{si}. {FLW}{group}")
                     continue
@@ -1406,35 +1361,38 @@ def main():
                     # Your IP has been restricted due to excessive access, please wait a bit
                     if current_domain < G_DOMAINS_TOTAL:
                         if interval_time:
-                            if NAMESPACE.print_to_console:
+                            if CLI.print_to_console:
                                 print(
-                                    f"\tWait {interval_time} sec...\r", end="")
+                                    f"\tWait {interval_time} sec...\r",
+                                    end=""
+                                )
                             time.sleep(interval_time)
 
-            if NAMESPACE.print_to_console:
-                print(f"                                      \r", end="")
+            if CLI.print_to_console:
+                print(f"{' '*38}\r", end="")
                 print_hr()
                 print_stat()
                 print(f"Process complete.")
+                # time.sleep(10)
 
-    elif NAMESPACE.domain:
+    elif CLI.domain:
         # Source data - one domain from the command line
-        domain_name = NAMESPACE.domain
-        expiration_days = NAMESPACE.expire_days
-        cost = NAMESPACE.cost_per_domain
+        domain_name = CLI.domain
+        expiration_days = CLI.expire_days
+        cost = CLI.cost_per_domain
 
         # Domain Check
         check_domain(domain_name, expiration_days, cost, None, 1)
 
-        if NAMESPACE.print_to_console:
+        if CLI.print_to_console:
             print_hr()
             print(f"Process complete.")
 
     if (len(EXPIRES_DOMAIN) > 0) or (len(ERRORS_DOMAIN) > 0) or (len(ERRORS2_DOMAIN) > 0):
-        if NAMESPACE.email_to:
+        if CLI.email_to:
             send_expires_dict_email()
 
-        if NAMESPACE.use_telegram:
+        if CLI.use_telegram:
             res = send_expires_dict_telegram()
             if res:
                 if res.status_code != 200:
@@ -1446,5 +1404,5 @@ if __name__ == "__main__":
 
     # Parsing command line
     parser = process_cli()
-    NAMESPACE = parser.parse_args(sys.argv[1:])
+    CLI = parser.parse_args(sys.argv[1:])
     main()
