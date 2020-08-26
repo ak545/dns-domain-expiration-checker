@@ -97,7 +97,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", 25))
 # SMTP_SERVER = "smtp.yandex.ru"
 # SMTP_PORT = 465  # For SSL
 
-SMTP_SENDER = os.getenv("SMTP_SERVER", "root")
+SMTP_SENDER = os.getenv("SMTP_SENDER", "root")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "P@ssw0rd")
 if str(os.getenv("SMTP_CHECK_SSL_HOSTNAME")) == "0":
     SMTP_CHECK_SSL_HOSTNAME = False
