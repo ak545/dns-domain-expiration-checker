@@ -291,11 +291,11 @@
     $ sudo apt update && sudo apt upgrade
     $ sudo apt install whois
 
-Для RHEL 6.x/CentOS 6.x:
+Для RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x:
 
     $ sudo yum install jwhois
 
-Для RHEL 7.x/CentOS 7.x/Fedora 22 и выше:
+Для RHEL 8.x/CentOS 8.x/Fedora 22 и выше:
 
     $ sudo dnf install jwhois
 
@@ -338,8 +338,10 @@
 
 Примеры:
 
-    SMTP_SERVER = "localhost"
-    SMTP_SERVER = "smtp.gmail.com"
+```python
+    SMTP_SERVER = os.getenv("SMTP_SERVER", "localhost")
+    # SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")    
+```
 
 **SMTP_PORT**
 
@@ -347,9 +349,11 @@ SMTP порт
 
 Примеры:
     
-    SMTP_PORT = 587  # Для starttls
-    SMTP_PORT = 465  # Для SSL
-    SMTP_PORT = 25   # По умолчанию
+```python
+    # SMTP_PORT = int(os.getenv("SMTP_PORT", 587))  # Для starttls
+    # SMTP_PORT = int(os.getenv("SMTP_PORT", 465))  # Для SSL
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 25))   # По умолчанию
+```
 
 **SMTP_SENDER**
 
@@ -357,7 +361,9 @@ Email адрес отправителя
 
 Примеры:
 
-    SMTP_SENDER = "user@gmail.com"
+```python
+    SMTP_SENDER = os.getenv("SMTP_SENDER", "user@gmail.com")
+```
 
 **SMTP_PASSWORD**
 
@@ -365,24 +371,30 @@ SMTP пароль
 
 Примеры:
 
-    SMTP_PASSWORD = "P@ssw0rd"
+```python
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "P@ssw0rd")
+```
 
 ### Параметры Telegram
-**MY_TOKEN**
+**TELEGRAM_TOKEN**
 
 Токен Telegram бота
 
 Примеры:
 
-    MY_TOKEN = 'NNNNNNNNN:NNNSSSSaaaaaFFFFFEEE3gggggQQWFFFFF01z'
+```python
+    TELEGRAM_TOKEN = 'NNNNNNNNN:NNNSSSSaaaaaFFFFFEEE3gggggQQWFFFFF01z'
+```
 
-**CHAT_ID**
+**TELEGRAM_CHAT_ID**
 
 Идентификатор канала Telegram
 
 Примеры :
 
-    CHAT_ID = '-NNNNNNNNN'
+```python
+    TELEGRAM_CHAT_ID = '-NNNNNNNNN'
+```
 
 Получить помощь по API Telegram: 
 [https://core.telegram.org/bots](https://core.telegram.org/bots)
@@ -394,7 +406,9 @@ Telegram API URL
 
 Примеры:
 
-    TELEGRAM_URL = "https://api.telegram.org/bot" + MY_TOKEN + "/"
+```python
+    TELEGRAM_URL = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/"
+```
 
 ### Опции внешней утилиты whois
 **WHOIS_COMMAND**
@@ -403,9 +417,11 @@ Telegram API URL
 
 Примеры:
 
+```python
     WHOIS_COMMAND = "whois"
-    WHOIS_COMMAND = "/usr/bin/whois"
-    WHOIS_COMMAND = "c:\\cygwin64\\bin\\whois.exe"
+    # WHOIS_COMMAND = "/usr/bin/whois"
+    # WHOIS_COMMAND = "c:\\cygwin64\\bin\\whois.exe"
+```
 
 Примечание: Не используйте для ОС Microsoft Windows аналогичную утилиту whois от автора Марка Руссиновича.
 При отправке whois-запросов на некотрые whois-сервера (например, на сервера GoDaddy.com) она может зависнуть или вернуть неверный результат.
@@ -416,7 +432,9 @@ Telegram API URL
 
 Примеры:
 
+```python
     WHOIS_COMMAND_TIMEOUT = 10
+```
 
 ### Стоимость продления домена
 **G_CURRENCY_SYMBOL**
@@ -425,7 +443,9 @@ Telegram API URL
     
 Примеры:
 
+```python
     G_CURRENCY_SYMBOL = '₽'
+```
 
 ### Параметры оценки времени до окончания сроков регисрации домена
 **G_SOON_ADD**
@@ -435,7 +455,9 @@ Telegram API URL
 
 Примеры:
 
+```python
     G_SOON_ADD = 21
+```
 
 Если --expire-days (или аналогичное значение в файле списков доменных имен) равно 60 дней, то за 81 дня до окночания срока регистрации домена (60 + 21), такой домен будет в категории "Скоро". Эта опция влияет только на то, каким цветом будет напечатан домен в консоли. Никаких сообщений отправлено не будет.
 
@@ -490,6 +512,12 @@ Telegram API URL
     $ EDITOR=nano crontab -u user -e
     $ EDITOR=mcedit crontab -u user -e
 
+или
+
+    $ VISUAL=nano crontab -u user -e
+    $ VISUAL=mcedit crontab -u user -e
+
+
 В файле задач создайте примерно такую запись (не используйте ключи **--print-to-console** и **--long-format**):
 
     0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
@@ -530,10 +558,19 @@ Telegram API URL
 Вы можете вносить любые правки в код скрипта и делать форк этого скрипта при условии указания ссылки на меня и на [Matty](https://github.com/Matty9191), как источника вашего вдохновения.
 
 ## Постскриптум
-- Работа скрипта проверялась в Microsoft Windows 10, Linux Fedora 29, Linux Ubuntu Descktop 18.10, Linux CentOS 6/7, Linux Manjaro 18.0.2.
+- Работа скрипта проверялась в Microsoft Windows 10, Linux Fedora 29/30/31/32, Linux Ubuntu Descktop 18.04/20.04, Linux CentOS 6/7/8, Linux Manjaro 18.0.2.
 - Программный код скррипта не идеален. Но прошу простить меня за это. На момент написания этого скрипта, Python я изучаю всего две недели. Мне нравится этот язык программирования, он намного проще и вместе с тем мощнее, чем другие языки программирования, которыми я владею. 
 - Все рекомендации данные мной для Apple macOS могут содержать в себе неточности. Простите, у меня нет под рукой Apple macBook (но вдруг, кто-то подарит мне его?).
 - Да здравствует E = mc&sup2; !
 - Желаю всем удачи!
+
+## Последняя просьба
+Пришло время положить конец Facebook. Работа там не является нейтральной с этической точки зрения: каждый день, когда вы идете туда на работу, вы делаете что-то не так. Если у вас есть учетная запись Facebook, удалите ее. Если ты работаешь в Facebook, увольняйся.
+
+И давайте не будем забывать, что Агентство национальной безопасности должно быть уничтожено.
+
+*(c) [David Fifield](mailto:david@bamsoftware.com)*
+
+---
 
 > Best regards, ak545 ( ru.mail&copy;ak545&sup2; )
