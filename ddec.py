@@ -99,6 +99,11 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", 25))
 
 SMTP_SENDER = os.getenv("SMTP_SERVER", "root")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "P@ssw0rd")
+if str(os.getenv("SMTP_CHECK_SSL_HOSTNAME")) == "0":
+    SMTP_CHECK_SSL_HOSTNAME = False
+else:
+    SMTP_CHECK_SSL_HOSTNAME = True
+
 
 REQUEST_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -648,17 +653,20 @@ def send_email(message):
         if NAMESPACE.email_ssl or NAMESPACE.email_starttls:
             # Create a secure SSL context
             context = ssl.create_default_context()
+            context.check_hostname = SMTP_CHECK_SSL_HOSTNAME
+
             if NAMESPACE.email_ssl:
                 server = smtplib.SMTP_SSL(
                     host=SMTP_SERVER, port=SMTP_PORT, context=context)
-        else:
+            context.verify_mode = ssl.CERT_REQUIRED
+
+        if server is None:
             server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            server.ehlo()  # Can be omitted
 
         if NAMESPACE.email_starttls:
             server.starttls(context=context)  # Secure the connection
-            server.ehlo()  # Can be omitted
 
+        server.ehlo()  # Can be omitted
         server.login(SMTP_SENDER, SMTP_PASSWORD)
         server.sendmail(SMTP_SENDER, NAMESPACE.email_to, message)
     except Exception as e:
