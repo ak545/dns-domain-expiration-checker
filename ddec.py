@@ -946,7 +946,8 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
         exd = "{:<20}".format("-")
     else:
         # exd = "{:%d.%m.%Y %H:%M}    ".format(expiration_date)
-        exd = "{:%d.%m.%Y      }    ".format(expiration_date)
+        # exd = "{:%d.%m.%Y      }    ".format(expiration_date)
+        exd = "{:%Y-%m-%d      }    ".format(expiration_date)
 
     dl = "{:>4}".format(days_remaining)
 
