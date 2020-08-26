@@ -85,8 +85,8 @@ SR = Style.RESET_ALL
 SEP = os.sep
 
 # SMTP options
-SMTP_SERVER = "localhost"
-SMTP_PORT = 25
+SMTP_SERVER = os.getenv("SMTP_SERVER", "localhost")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 25))
 
 # SMTP_SERVER = "smtp.gmail.com"
 # SMTP_PORT = 587  # For starttls
@@ -97,8 +97,13 @@ SMTP_PORT = 25
 # SMTP_SERVER = "smtp.yandex.ru"
 # SMTP_PORT = 465  # For SSL
 
-SMTP_SENDER = "root"
-SMTP_PASSWORD = "P@ssw0rd"
+SMTP_SENDER = os.getenv("SMTP_SERVER", "root")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "P@ssw0rd")
+if str(os.getenv("SMTP_CHECK_SSL_HOSTNAME")) == "0":
+    SMTP_CHECK_SSL_HOSTNAME = False
+else:
+    SMTP_CHECK_SSL_HOSTNAME = True
+
 
 REQUEST_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -111,13 +116,13 @@ TELEGRAM_PROXIES = {}
 
 # Get help from https://core.telegram.org/bots
 # token that can be generated talking with @BotFather on telegram
-MY_TOKEN = '<INSERT YOUR TOKEN>'
+TELEGRAM_TOKEN = '<INSERT YOUR TOKEN>'
 
 # channel id for telegram
-CHAT_ID = '<INSERT YOUR CHANNEL ID>'
+TELEGRAM_CHAT_ID = '<INSERT YOUR CHANNEL ID>'
 
 # url for post request to api.telegram.org
-TELEGRAM_URL = "https://api.telegram.org/bot" + MY_TOKEN + "/"
+TELEGRAM_URL = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/"
 
 # Options for an external utility whois
 # Keywords for whois-data
@@ -459,11 +464,11 @@ def send_telegram(message):
     :return: string
     """
     global TELEGRAM_URL
-    global CHAT_ID
+    global TELEGRAM_CHAT_ID
     global REQUEST_HEADERS
     global TELEGRAM_PROXIES
 
-    params = {'chat_id': CHAT_ID, 'parse_mode': 'html', 'text': message}
+    params = {'TELEGRAM_chat_id': TELEGRAM_CHAT_ID, 'parse_mode': 'html', 'text': message}
 
     if len(TELEGRAM_PROXIES) > 0:
         response = requests.post(TELEGRAM_URL + 'sendMessage', data=params, proxies=TELEGRAM_PROXIES,
@@ -648,17 +653,20 @@ def send_email(message):
         if NAMESPACE.email_ssl or NAMESPACE.email_starttls:
             # Create a secure SSL context
             context = ssl.create_default_context()
+            context.check_hostname = SMTP_CHECK_SSL_HOSTNAME
+
             if NAMESPACE.email_ssl:
                 server = smtplib.SMTP_SSL(
                     host=SMTP_SERVER, port=SMTP_PORT, context=context)
-        else:
+            context.verify_mode = ssl.CERT_REQUIRED
+
+        if server is None:
             server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            server.ehlo()  # Can be omitted
 
         if NAMESPACE.email_starttls:
             server.starttls(context=context)  # Secure the connection
-            server.ehlo()  # Can be omitted
 
+        server.ehlo()  # Can be omitted
         server.login(SMTP_SENDER, SMTP_PASSWORD)
         server.sendmail(SMTP_SENDER, NAMESPACE.email_to, message)
     except Exception as e:
