@@ -13,9 +13,9 @@
 # Carl Mercier
 # https://github.com/cmer
 #
-# Current Version: 0.2.6
+# Current Version: 0.2.7
 # Creation Date: 2019-07-05
-# Last Fix Date: 2020-08-26
+# Last Fix Date: 2020-09-23
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -73,7 +73,7 @@ if sys.version_info < (3, 6):
 
 
 # Global constants
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -118,6 +118,10 @@ REQUEST_HEADERS = {
 # Telegram bot options
 # Proxy for telegram
 TELEGRAM_PROXIES = {}
+# TELEGRAM_PROXIES = {
+#     'http': 'socks5://127.0.0.1:9150',
+#     'https': 'socks5://127.0.0.1:9150',
+# }
 
 # Get help from https://core.telegram.org/bots
 # token that can be generated talking with @BotFather on telegram
@@ -144,6 +148,7 @@ EXPIRE_STRINGS = [
     "Expiry Date:",
     "Expiration date:",
     "Expiration Date:",
+    "Expiration Time:",
     "Renewal date:",
     "paid-till:",
     "Domain expires:",
@@ -336,43 +341,87 @@ def parse_whois_data(domain, whois_data):
     whois_server = None
     error = None
 
-    for line in str(whois_data).splitlines():
-        if line == "":
-            continue
+    if 'No entries found for the selected source(s)' in str(whois_data):
+        # It is Free!
+        error = 11
+        return None, None, None, error
 
-        if "Your connection limit exceeded. Please slow down and try again later." in line:
-            # Interval is small
-            error = 2
-            if domain not in ERRORS2_DOMAIN:
-                ERRORS2_DOMAIN.append(str(domain).lower())
-            return None, None, None, error
+    if 'http://www.denic.de/en/domains/whois-service/web-whois.html' in str(whois_data):
+        # denic.de
+        error = 22
+        return None, None, None, error
 
-        if any(not_found_string in line for not_found_string in
-               NOT_FOUND_STRINGS):
-            # Is it Free?
-            return None, None, None, error
+    if 'https://whois.dot.ph/' in str(whois_data):
+        # whois.dot.ph
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
+        }
+        try:
+            page = requests.get(
+                f'https://whois.dot.ph/?utf8=%E2%9C%93&search={domain}',
+                headers=headers
+            )
+        except requests.exceptions.RequestException:
+            print(f'{FLR}Failed to fetch remote blocklist providers. Continue...')
+            return
 
-        if any(expire_string in line for expire_string in EXPIRE_STRINGS):
-            if not expiration_date:
-                try:
-                    str_date = str(line.partition(": ")[2])
-                    if str_date == "":
-                        str_date = str(line.partition("]")[2])
-                    str_date = str_date.replace("/", "-")
+        html = page.content.decode('utf-8', 'ignore')
+        if 'var expiryDate = moment(' in html:
+            for line in html.splitlines():
+                if 'var expiryDate = moment(' in line:
+                    if 'Registrar:' in line:
+                        registrar = line.replace(
+                            "Registrar:", ""
+                        ).replace(
+                            "<br>", ""
+                        )
+
+                    str_date = line.replace(
+                        "var expiryDate = moment('", ""
+                    ).replace(
+                        "').format('YYYY-MM-DDTHH:mm:ss Z');", ""
+                    )
                     expiration_date = dateutil.parser.parse(
                         str_date, ignoretz=True)
-                except Exception:
-                    error = 1
 
-        if any(registrar_string in line for registrar_string in
-               REGISTRAR_STRINGS):
-            if not registrar:
-                registrar = line.partition(": ")[2].strip()
+    else:
+        for line in str(whois_data).splitlines():
+            if line == "":
+                continue
 
-        if any(whois_server_string in line for whois_server_string in
-               WHOIS_SERVER_STRINGS):
-            if not whois_server:
-                whois_server = line.partition(": ")[2].strip()
+            if "Your connection limit exceeded. Please slow down and try again later." in line:
+                # Interval is small
+                error = 2
+                if domain not in ERRORS2_DOMAIN:
+                    ERRORS2_DOMAIN.append(str(domain).lower())
+                return None, None, None, error
+
+            if any(not_found_string in line for not_found_string in
+                   NOT_FOUND_STRINGS):
+                # Is it Free?
+                return None, None, None, error
+
+            if any(expire_string in line for expire_string in EXPIRE_STRINGS):
+                if not expiration_date:
+                    try:
+                        str_date = str(line.partition(": ")[2])
+                        if str_date == "":
+                            str_date = str(line.partition("]")[2])
+                        str_date = str_date.replace("/", "-")
+                        expiration_date = dateutil.parser.parse(
+                            str_date, ignoretz=True)
+                    except Exception:
+                        error = 1
+
+            if any(registrar_string in line for registrar_string in
+                   REGISTRAR_STRINGS):
+                if not registrar:
+                    registrar = line.partition(": ")[2].strip()
+
+            if any(whois_server_string in line for whois_server_string in
+                   WHOIS_SERVER_STRINGS):
+                if not whois_server:
+                    whois_server = line.partition(": ")[2].strip()
 
     return expiration_date, registrar, whois_server, error
 
@@ -929,21 +978,29 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
 
     dl = "{:>4}".format(days_remaining)
 
-    # If error == 1 or 2
-    dlerr1 = "{:<17}".format("Error")
+    if error == 11:
+        dlerr1 = "{:<17}".format("Is it Free!")
+    else:
+        dlerr1 = "{:<17}".format("Error")
+
     dlerr2 = "{:<17}".format("Is it Free?")
 
-    # If error == 3
     # Your connection limit exceeded.
     # Please slow down and try again later.
     dlerr3 = "{:<17}".format("Interval is small")
 
     if days_remaining == -1 or error:
-        dnn = f'{FLR}{dn}{FR}'
         if error == 2:
+            dnn = f'{FLR}{dn}{FR}'
             ddl = f"{FLR}{dlerr3}{FR}"
         else:
-            ddl = f"{FLR}{dlerr1}{FR}"
+            if error == 11:
+                dnn = f'{FLC}{dn}{FR}'
+                ddl = f"{FLC}{dlerr1}{FR}"
+            else:
+                dnn = f'{FLR}{dn}{FR}'
+                ddl = f"{FLR}{dlerr1}{FR}"
+
         G_DOMAINS_ERROR += 1
     elif days_remaining == -2:
         dnn = f'{FLC}{dn}{FR}'
@@ -983,6 +1040,15 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
             dnn,
             f"{exd}",
             ddl
+        )
+    if error == 22:
+        # denic.de
+        print(
+            f"\tThe DENIC whois service on port 43 doesn't disclose any information concerning\n"
+            f"\tthe domain holder, general request and abuse contact.\n"
+            f"\tThis information can be obtained through use of our web-based whois service\n"
+            f"\tavailable at the DENIC website:\n"
+            f"\thttp://www.denic.de/en/domains/whois-service/web-whois.html"
         )
 
 
@@ -1033,26 +1099,33 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
     if not interval_time:
         interval_time = CLI.interval_time
 
+    expiration_date = None
+    registrar = None
+    whois_server = None
+    error = None
+
     if CLI.use_only_external_whois:
         expiration_date, registrar, whois_server, error = make_whois_query(
             domain_name)
     else:
-        expiration_date = None
-        registrar = None
-        whois_server = None
-        error = None
-
+        w = None
         try:
             w = whois.whois(domain_name)
-        except Exception:
+        except Exception as e:
             is_internal_error = True
             error = 1
+
+        if not is_internal_error:
+            is_internal_error = w is None
 
         if not is_internal_error:
             expiration_date = w.get("expiration_date")
             registrar = w.get("registrar")
             whois_server = w.get("whois_server")
-        else:
+
+            is_internal_error = expiration_date is None
+
+        if is_internal_error:
             if CLI.use_extra_external_whois:
                 expiration_date_e, registrar_e, whois_server_e, error = make_whois_query(
                     domain_name)
@@ -1060,11 +1133,10 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
                     if error == 1:
                         if domain_name not in ERRORS_DOMAIN:
                             ERRORS_DOMAIN.append(str(domain_name).lower())
-                    elif error == 2:
+                    elif error == 2 or error == 22:
                         # Exceeded the limit on whois
                         if domain_name not in ERRORS2_DOMAIN:
                             ERRORS2_DOMAIN.append(str(domain_name).lower())
-
                 if not expiration_date:
                     expiration_date = expiration_date_e
                 if not registrar:
@@ -1084,7 +1156,7 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
 
     if (not whois_server) and (not registrar) and (not expiration_date):
         print_domain(domain_name, whois_server, registrar,
-                        expiration_date, -2, -1, cost, current_domain, error)  # Free ?
+                     expiration_date, -2, -1, cost, current_domain, error)  # Free ?
         if current_domain < G_DOMAINS_TOTAL:
             if interval_time:
                 if CLI.print_to_console:
@@ -1094,7 +1166,7 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
 
     if not expiration_date:
         print_domain(domain_name, whois_server, registrar,
-                        expiration_date, -1, -1, cost, current_domain, error)  # Error
+                     expiration_date, -1, -1, cost, current_domain, error)  # Error
         if current_domain < G_DOMAINS_TOTAL:
             if interval_time:
                 if CLI.print_to_console:
@@ -1110,7 +1182,7 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
     days_remaining = calculate_expiration_days(expiration_date_min)
 
     print_domain(domain_name, whois_server, registrar, expiration_date_min, days_remaining,
-                    expiration_days, cost, current_domain, error)
+                 expiration_days, cost, current_domain, error)
 
     if days_remaining < expiration_days:
         EXPIRES_DOMAIN[str(domain_name).lower()] = days_remaining
@@ -1373,7 +1445,8 @@ def main():
                 print_hr()
                 print_stat()
                 print(f"Process complete.")
-                # time.sleep(10)
+                # if G_DOMAINS_SOON > 0 or G_DOMAINS_EXPIRE > 0 or G_DOMAINS_ERROR > 0:
+                #     time.sleep(10)
 
     elif CLI.domain:
         # Source data - one domain from the command line
