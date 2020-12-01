@@ -259,6 +259,11 @@ Here you must specify the email address of the recipient.
 Send email via SSL (default is False)
 This is an additional option for --email-to.
 
+** -auth, --email-auth**
+
+Send email via authenticated SMTP (default is False)
+This is an additional option for --email-to.
+
 **-starttls, --email-starttls**
 
 Send email via STARTTLS (default is False)
