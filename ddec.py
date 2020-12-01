@@ -13,9 +13,9 @@
 # Carl Mercier
 # https://github.com/cmer
 #
-# Current Version: 0.2.7
+# Current Version: 0.2.8
 # Creation Date: 2019-07-05
-# Last Fix Date: 2020-09-23
+# Last Fix Date: 2020-12-01
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -73,7 +73,7 @@ if sys.version_info < (3, 6):
 
 
 # Global constants
-__version__ = "0.2.7"
+__version__ = "0.2.8"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -693,7 +693,8 @@ def send_email(message):
             server.starttls(context=context)  # Secure the connection
 
         server.ehlo()  # Can be omitted
-        server.login(SMTP_SENDER, SMTP_PASSWORD)
+        if (CLI.email_auth):
+            server.login(SMTP_SENDER, SMTP_PASSWORD)
         server.sendmail(SMTP_SENDER, CLI.email_to, message)
     except Exception as e:
         # Print any error messages to stdout
@@ -809,6 +810,13 @@ def process_cli():
         help="Send email via SSL (default is False)"
     )
     parent_group.add_argument(
+        "-auth",
+        "--email-auth",
+        action="store_true",
+        default=False,
+        help="Send email via authenticated SMTP (default is False)"
+    )
+    parent_group.add_argument(
         "-starttls",
         "--email-starttls",
         action="store_true",
@@ -862,6 +870,7 @@ def print_namespase():
         f"\tProxy for Telegram       : {CLI.proxy}\n"
         f"\tEmail to                 : {CLI.email_to}\n"
         f"\tEmail SSL                : {CLI.email_ssl}\n"
+        f"\tEmail AUTH               : {CLI.email_auth}\n" 
         f"\tEmail STARTTLS           : {CLI.email_starttls}\n"
         f"\tUse internal whois       : {use_internal_whois}\n"
         f"\tUse only external whois  : {CLI.use_only_external_whois}\n"
@@ -1332,6 +1341,11 @@ def check_cli_logic():
         sys.exit(-1)
 
     if CLI.email_ssl and (not CLI.email_to):
+        print(
+            f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
+        sys.exit(-1)
+
+    if CLI.email_auth and (not CLI.email_to):
         print(
             f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
         sys.exit(-1)
