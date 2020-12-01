@@ -256,27 +256,24 @@ Here you must specify the email address of the recipient.
 
 **-ssl, --email-ssl**
 
-Send email via SSL (default is False)
-This is an additional option for --email-to.
+Send email via SSL (default is False). This is an additional option for --email-to.
 
-** -auth, --email-auth**
+**-auth, --email-auth**
 
-Send email via authenticated SMTP (default is False)
-This is an additional option for --email-to.
+Send email via authenticated SMTP (default is False). This is an additional option for --email-to.
 
 **-starttls, --email-starttls**
 
-Send email via STARTTLS (default is False)
-This is an additional option for --email-to.
+Send email via STARTTLS (default is False). This is an additional option for --email-to.
 
 **-oe, --use-only-external-whois**
 
-Use only external utility whois (default is False)
-In this mode, data analysis by the internal engine is not performed. We completely trust the work of the external utility whois.
+Use only external utility whois (default is False). In this mode, data analysis by the internal engine is not performed. We completely trust the work of the external utility whois.
 
 **-ee, --use-extra-external-whois**
 
 Use external whois utility for additional analysis (default is False)
+
 I recommend using this mode. In this mode, data analysis is first performed by the internal engine, and in case of errors, it is repeated by the external utility whois.
 Why do I recommend this particular mode?
 Because in some cases, for example, for domains from the .COM zone, domain management can be delegated to some other regional registrars. And if you buy a domain from a regional registrar, then you will be renewing it from him, but not from the parent registrar. But since data synchronization between regional and parent registrars is not instantaneous (the delay is from several minutes to several hours), if you request whois information using only the external whois utility, you will receive data from the parent registrar. The external whois utility works this way. And if the regional registrar by this time has not yet had time to synchronize their data with the parent, you will receive a false message that the domain is not yet renewed, although in fact everything is already fine with it. The internal script engine allows detecting the fact of delegation of domain management from the parent registrar to the regional one. The internal engine takes information about the period of domain registration from the regional registrar whose data is the most reliable and up-to-date.
