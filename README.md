@@ -254,6 +254,10 @@ Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is
 Send a warning message to email address (default is None)
 Here you must specify the email address of the recipient.
 
+**-subject STRING, --email-subject STRING**
+
+Append custom text to the email subject (default is None). This is an additional option for --email-to.
+
 **-ssl, --email-ssl**
 
 Send email via SSL (default is False). This is an additional option for --email-to.

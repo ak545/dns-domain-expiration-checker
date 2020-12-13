@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
+# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Program: DNS Domain Expiration Checker from ak545
@@ -10,12 +11,12 @@
 # https://github.com/ak545
 #
 # Thanks to:
-# Carl Mercier
-# https://github.com/cmer
+# Carl Mercier (https://github.com/cmer)
+# Leif (https://github.com/akhepcat)
 #
-# Current Version: 0.2.8
+# Current Version: 0.2.9
 # Creation Date: 2019-07-05
-# Last Fix Date: 2020-12-01
+# Date of last changes: 2020-12-14
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -29,6 +30,7 @@
 #  GNU General Public License for more details.
 
 from __future__ import unicode_literals
+from typing import List, Dict, Tuple, Union, Optional, Sequence, Callable, Type
 import os
 import sys
 import platform
@@ -71,9 +73,8 @@ if sys.version_info < (3, 6):
     print("Your version:", sys.version)
     sys.exit(-1)
 
-
 # Global constants
-__version__ = "0.2.8"
+__version__ = "0.2.9"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -116,6 +117,7 @@ REQUEST_HEADERS = {
 }
 
 # Telegram bot options
+
 # Proxy for telegram
 TELEGRAM_PROXIES = {}
 # TELEGRAM_PROXIES = {
@@ -135,7 +137,7 @@ TELEGRAM_URL = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/"
 
 # Options for an external utility whois
 # Keywords for whois-data
-EXPIRE_STRINGS = [
+EXPIRE_STRINGS = (
     "Registry Expiry Date:",
     "Expiration:",
     "Domain Expiration Date:",
@@ -155,25 +157,32 @@ EXPIRE_STRINGS = [
     "renewal date:",
     "expires:",
     "Expires:",
-    "Expires On:"
-]
-REGISTRAR_STRINGS = [
+    "Expires On:",
+)
+REGISTRAR_STRINGS = (
     "[Registrant]",
     "Registrar:",
     "registrar:",
     "Registrant:",
     # "Status:",
     "Sponsoring Registrar:",
-    "REGISTRAR:"
-]
-WHOIS_SERVER_STRINGS = [
+    "REGISTRAR:",
+)
+WHOIS_SERVER_STRINGS = (
     "Registrar WHOIS Server:",
-    "WHOIS Server:"
-]
-NOT_FOUND_STRINGS = [
+    "WHOIS Server:",
+)
+NOT_FOUND_STRINGS = (
     "NOT FOUND",
-    "No entries found for the selected source(s)."
-]
+    "No entries found for the selected source(s).",
+)
+
+# Unsupported domains (all lowercase !!!)
+# this tuple contains fragments of word endings
+UNSUPPORTED_DOMAINS = (
+    '.gov',
+    'denic.de',
+)
 
 # Command for external whois
 WHOIS_COMMAND = "whois"
@@ -199,7 +208,6 @@ G_SOON_ADD = 21
 
 # List of domains processed from file
 G_DOMAINS_LIST = []
-
 
 # Currency symbol
 G_CURRENCY_SYMBOL = '$'
@@ -228,7 +236,7 @@ G_TOTAL_COST_EXPIRE = 0
 G_DOMAINS_ERROR = 0
 
 
-def whois_check():
+def whois_check() -> None:
     """
     External whois availability check
     :return: None
@@ -293,11 +301,11 @@ def whois_check():
         sys.exit(-1)
 
 
-def make_whois_query(domain):
+def make_whois_query(domain: str):
     """
     Execute a external whois and parse the data to extract specific data
-    :param domain: string
-    :return: date, string, string, boolean (expiration_date, registrar, whois_server, error)
+    :param domain: str
+    :return: datetime, str, str, bool (expiration_date, registrar, whois_server, error)
     """
     global ERRORS_DOMAIN
 
@@ -311,9 +319,9 @@ def make_whois_query(domain):
 
     try:
         whois_data = p.communicate(timeout=WHOIS_COMMAND_TIMEOUT)[0]
-    except Exception as e:
-        if domain not in ERRORS_DOMAIN:
-            ERRORS_DOMAIN.append(str(domain).lower())
+    except Exception:
+        if domain.lower() not in ERRORS_DOMAIN:
+            ERRORS_DOMAIN.append(domain.lower())
         return None, None, None, 1
 
     # TODO: Work around whois issue #55 which returns a non-zero
@@ -327,12 +335,12 @@ def make_whois_query(domain):
     return parse_whois_data(domain, whois_data)
 
 
-def parse_whois_data(domain, whois_data):
+def parse_whois_data(domain: str, whois_data: str):
     """
     Grab the registrar and expiration date from the WHOIS data
-    :param domain: string
-    :param whois_data: string
-    :return: date, string, string, boolean (expiration_date, registrar, whois_server, error)
+    :param domain: str
+    :param whois_data: str
+    :return: datetime, str, str, bool (expiration_date, registrar, whois_server, error)
     """
     global ERRORS2_DOMAIN
 
@@ -341,17 +349,17 @@ def parse_whois_data(domain, whois_data):
     whois_server = None
     error = None
 
-    if 'No entries found for the selected source(s)' in str(whois_data):
+    if 'No entries found for the selected source(s)' in whois_data:
         # It is Free!
         error = 11
         return None, None, None, error
 
-    if 'http://www.denic.de/en/domains/whois-service/web-whois.html' in str(whois_data):
+    if 'http://www.denic.de/en/domains/whois-service/web-whois.html' in whois_data:
         # denic.de
         error = 22
         return None, None, None, error
 
-    if 'https://whois.dot.ph/' in str(whois_data):
+    if 'https://whois.dot.ph/' in whois_data:
         # whois.dot.ph
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
@@ -362,8 +370,9 @@ def parse_whois_data(domain, whois_data):
                 headers=headers
             )
         except requests.exceptions.RequestException:
+            error = -1
             print(f'{FLR}Failed to fetch remote blocklist providers. Continue...')
-            return
+            return None, None, None, error
 
         html = page.content.decode('utf-8', 'ignore')
         if 'var expiryDate = moment(' in html:
@@ -385,7 +394,7 @@ def parse_whois_data(domain, whois_data):
                         str_date, ignoretz=True)
 
     else:
-        for line in str(whois_data).splitlines():
+        for line in whois_data.splitlines():
             if line == "":
                 continue
 
@@ -393,28 +402,26 @@ def parse_whois_data(domain, whois_data):
                 # Interval is small
                 error = 2
                 if domain not in ERRORS2_DOMAIN:
-                    ERRORS2_DOMAIN.append(str(domain).lower())
+                    ERRORS2_DOMAIN.append(domain.lower())
                 return None, None, None, error
 
-            if any(not_found_string in line for not_found_string in
-                   NOT_FOUND_STRINGS):
+            if any(not_found_string in line for not_found_string in NOT_FOUND_STRINGS):
                 # Is it Free?
                 return None, None, None, error
 
             if any(expire_string in line for expire_string in EXPIRE_STRINGS):
                 if not expiration_date:
                     try:
-                        str_date = str(line.partition(": ")[2])
+                        str_date = line.partition(": ")[2]
                         if str_date == "":
-                            str_date = str(line.partition("]")[2])
+                            str_date = line.partition("]")[2]
                         str_date = str_date.replace("/", "-")
                         expiration_date = dateutil.parser.parse(
                             str_date, ignoretz=True)
                     except Exception:
                         error = 1
 
-            if any(registrar_string in line for registrar_string in
-                   REGISTRAR_STRINGS):
+            if any(registrar_string in line for registrar_string in REGISTRAR_STRINGS):
                 if not registrar:
                     registrar = line.partition(": ")[2].strip()
 
@@ -426,16 +433,16 @@ def parse_whois_data(domain, whois_data):
     return expiration_date, registrar, whois_server, error
 
 
-def calculate_expiration_days(expiration_date):
+def calculate_expiration_days(expiration_date: datetime) -> int:
     """
     Check to see when a domain will expire
-    :param expiration_date: date
-    :return: integer
+    :param expiration_date: datetime
+    :return: int
     """
     try:
         domain_expire = expiration_date - datetime.now()
-    except:
-        print(f"{FLR}Unable to calculate the expiration days")
+    except Exception as e:
+        print(f"{FLR}Unable to calculate the expiration days.\nError: {str(e)}")
         sys.exit(-1)
 
     return domain_expire.days
@@ -444,7 +451,7 @@ def calculate_expiration_days(expiration_date):
 def send_expires_dict_telegram():
     """
     Sending a message through the Telegram bot.
-    :return: string
+    :return: str
     """
     g_total_cost = G_TOTAL_COST_SOON + G_TOTAL_COST_EXPIRE
 
@@ -457,44 +464,45 @@ def send_expires_dict_telegram():
     message = ""
     if len(EXPIRES_DOMAIN) > 0:
         # add expiring domains
-        message += "\n<b>Expiring domains</b><pre>" + today + "\n"
+        message += f"\n<b>Expiring domains</b><pre>{today}\n"
         message += hl + "\n"
         for domain, day_left in EXPIRES_DOMAIN.items():
             dn = "{:<42}".format(domain)
-            str_domain_item = dn + " : " + str(day_left) + "\n"
+            str_domain_item = f"{dn} : {day_left}\n"
             message += str_domain_item
-        message += "</pre>"
+        message += f"</pre>"
 
     if len(ERRORS_DOMAIN) > 0:
         # add error domains
-        message += "\n<b>Domains that caused errors</b><pre>" + today + "\n"
+        # message += "\n<b>Domains that caused errors</b><pre>" + today + "\n"
+        message += f"\n<b>Domains that caused errors</b><pre>{today}\n"
         message += hl + "\n"
         for domain in ERRORS_DOMAIN:
             dn = "{:<42}".format(domain)
-            str_domain_item = dn + " : -\n"
+            str_domain_item = f"{dn} : -\n"
             message += str_domain_item
-        message += "</pre>"
+        message += f"</pre>"
 
     if len(ERRORS2_DOMAIN) > 0:
         # add error2 domains
-        message += "\n<b>Exceeded the limit on whois</b><pre>" + today + "\n"
+        message += f"\n<b>Exceeded the limit on whois</b><pre>{today}\n"
         message += hl + "\n"
         for domain in ERRORS2_DOMAIN:
             dn = "{:<42}".format(domain)
-            str_domain_item = dn + " : -\n"
+            str_domain_item = f"{dn} : -\n"
             message += str_domain_item
-        message += "</pre>"
+        message += f"</pre>"
 
     if g_total_cost > 0:
         message += "\n<b>Cost</b><pre>"
         message += hl + "\n"
         if G_TOTAL_COST_EXPIRE > 0:
-            message += "For Expires   : " + G_CURRENCY_SYMBOL + " " + str(round(G_TOTAL_COST_EXPIRE, 2)) + "\n"
+            message += f"For Expires   : {G_CURRENCY_SYMBOL} {round(G_TOTAL_COST_EXPIRE, 2)}\n"
         if G_TOTAL_COST_SOON > 0:
-            message += "For Soon      : " + G_CURRENCY_SYMBOL + " " + str(round(G_TOTAL_COST_SOON, 2)) + "\n"
+            message += f"For Soon      : {G_CURRENCY_SYMBOL} {round(G_TOTAL_COST_SOON, 2)}\n"
         message += hl + "\n"
-        message += "Total         : " + G_CURRENCY_SYMBOL + " " + str(round(g_total_cost, 2)) + "\n"
-        message += "</pre>"
+        message += f"Total         : {G_CURRENCY_SYMBOL} {round(g_total_cost, 2)}\n"
+        message += f"</pre>"
 
     if message != "":
         message += "\n"
@@ -503,11 +511,11 @@ def send_expires_dict_telegram():
     return response
 
 
-def send_telegram(message):
+def send_telegram(message: str):
     """
     Sending a message through the Telegram bot.
-    :param message: string
-    :return: string
+    :param message: str
+    :return: str
     """
     params = {'chat_id': TELEGRAM_CHAT_ID, 'parse_mode': 'html', 'text': message}
     if len(TELEGRAM_PROXIES) > 0:
@@ -519,7 +527,7 @@ def send_telegram(message):
     return response
 
 
-def send_expires_dict_email():
+def send_expires_dict_email() -> None:
     """
     Preparing the contents of an email to send.
     :return: None
@@ -532,7 +540,10 @@ def send_expires_dict_email():
     msg = MIMEMultipart("alternative")
     msg['From'] = SMTP_SENDER
     msg['To'] = CLI.email_to
-    msg['Subject'] = "Expiring domains"
+    subject = "Expiring domains"
+    if CLI.email_subject:
+        subject = subject + ": " + CLI.email_subject
+    msg['Subject'] = subject
 
     body_text = "Expiring domains\n%BODY%"
     body_html = """\
@@ -567,7 +578,7 @@ def send_expires_dict_email():
         for domain, day_left in EXPIRES_DOMAIN.items():
             i += 1
             dn = "{:<42}".format(domain)
-            str_domain_item = str(i) + ". " + dn + " " + str(day_left) + "\n"
+            str_domain_item = f"{i}. {dn} {day_left}\n"
             domain_list_txt += str_domain_item
 
     if len(ERRORS_DOMAIN) > 0:
@@ -577,7 +588,7 @@ def send_expires_dict_email():
         domain_list_txt += hl + "\n"
         for i, domain in enumerate(ERRORS_DOMAIN, 1):
             dn = "{:<42}".format(domain)
-            str_domain_item = str(i) + ". " + dn + " -\n"
+            str_domain_item = f"{i}. {dn} -\n"
             domain_list_txt += str_domain_item
 
     if len(ERRORS2_DOMAIN) > 0:
@@ -587,18 +598,18 @@ def send_expires_dict_email():
         domain_list_txt += hl + "\n"
         for i, domain in enumerate(ERRORS2_DOMAIN, 1):
             dn = "{:<42}".format(domain)
-            str_domain_item = str(i) + ". " + dn + " -\n"
+            str_domain_item = f"{i}. {dn} -\n"
             domain_list_txt += str_domain_item
 
     if g_total_cost > 0:
         domain_list_txt += "\nCost\n"
         domain_list_txt += hl + "\n"
         if G_TOTAL_COST_EXPIRE > 0:
-            domain_list_txt += "For Expires   : " + G_CURRENCY_SYMBOL + " " + str(round(G_TOTAL_COST_EXPIRE, 2)) + "\n"
+            domain_list_txt += f"For Expires   : {G_CURRENCY_SYMBOL} {round(G_TOTAL_COST_EXPIRE, 2)}\n"
         if G_TOTAL_COST_SOON > 0:
-            domain_list_txt += "For Soon      : " + G_CURRENCY_SYMBOL + " " + str(round(G_TOTAL_COST_SOON, 2)) + "\n"
+            domain_list_txt += f"For Soon      : {G_CURRENCY_SYMBOL} {round(G_TOTAL_COST_SOON, 2)}\n"
         domain_list_txt += hl + "\n"
-        domain_list_txt += "Total         : " + G_CURRENCY_SYMBOL + " " + str(round(g_total_cost, 2)) + "\n"
+        domain_list_txt += f"Total         : {G_CURRENCY_SYMBOL} {round(g_total_cost, 2)}\n"
         domain_list_txt += "\n"
 
     body_text = body_text.replace("%BODY%", domain_list_txt)
@@ -614,9 +625,9 @@ def send_expires_dict_email():
         for domain, day_left in EXPIRES_DOMAIN.items():
             i += 1
             dn = "{:<42}".format(domain)
-            str_domain_item = str(i) + ". " + dn + " " + str(day_left) + "\n"
+            str_domain_item = f"{i}. {dn} {day_left}\n"
             domain_list += str_domain_item
-        domain_list += "</pre>"
+        domain_list += f"</pre>"
 
     if len(ERRORS_DOMAIN) > 0:
         # add error domains
@@ -625,9 +636,9 @@ def send_expires_dict_email():
         domain_list += hl + "\n"
         for i, domain in enumerate(ERRORS_DOMAIN, 1):
             dn = "{:<42}".format(domain)
-            str_domain_item = str(i) + ". " + dn + " -\n"
+            str_domain_item = f"{i}. {dn} -\n"
             domain_list += str_domain_item
-        domain_list += "</pre>"
+        domain_list += f"</pre>"
 
     if len(ERRORS2_DOMAIN) > 0:
         # add error2 domains
@@ -636,20 +647,20 @@ def send_expires_dict_email():
         domain_list += hl + "\n"
         for i, domain in enumerate(ERRORS2_DOMAIN, 1):
             dn = "{:<42}".format(domain)
-            str_domain_item = str(i) + ". " + dn + " -\n"
+            str_domain_item = f"{i}. {dn} -\n"
             domain_list += str_domain_item
-        domain_list += "</pre>"
+        domain_list += f"</pre>"
 
     if g_total_cost > 0:
         domain_list += "<br><b>Cost</b><pre>"
         domain_list += hl + "\n"
         if G_TOTAL_COST_EXPIRE > 0:
-            domain_list += "For Expires   : " + G_CURRENCY_SYMBOL + " " + str(round(G_TOTAL_COST_EXPIRE, 2)) + "\n"
+            domain_list += f"For Expires   : {G_CURRENCY_SYMBOL} {round(G_TOTAL_COST_EXPIRE, 2)}\n"
         if G_TOTAL_COST_SOON > 0:
-            domain_list += "For Soon      : " + G_CURRENCY_SYMBOL + " " + str(round(G_TOTAL_COST_SOON, 2)) + "\n"
+            domain_list += f"For Soon      : {G_CURRENCY_SYMBOL} {round(G_TOTAL_COST_SOON, 2)}\n"
         domain_list += hl + "\n"
-        domain_list += "Total         : " + G_CURRENCY_SYMBOL + " " + str(round(g_total_cost, 2)) + "\n"
-        domain_list += "</pre>"
+        domain_list += f"Total         : {G_CURRENCY_SYMBOL} {round(g_total_cost, 2)}\n"
+        domain_list += f"</pre>"
 
     body_html = body_html.replace("%BODY%", domain_list)
 
@@ -664,10 +675,10 @@ def send_expires_dict_email():
     send_email(message)
 
 
-def send_email(message):
+def send_email(message: str) -> None:
     """
     Sending a email to the recipient
-    :param message: string
+    :param message: str
     :return: None
     """
     server = None
@@ -799,8 +810,14 @@ def process_cli():
     parent_group.add_argument(
         "-e",
         "--email-to",
-        help=" Send a warning message to email address (default is None)",
+        help="Send a warning message to email address (default is None)",
         metavar="EMAIL"
+    )
+    parent_group.add_argument(
+        "-subject",
+        "--email-subject",
+        help="Append custom text to the email subject (default is None)",
+        metavar="STRING"
     )
     parent_group.add_argument(
         "-ssl",
@@ -847,7 +864,7 @@ def process_cli():
     return parser
 
 
-def print_namespase():
+def print_namespase() -> None:
     """
     Print preset options to console
     :return: None
@@ -869,6 +886,7 @@ def print_namespase():
         f"\tUse Telegram             : {CLI.use_telegram}\n"
         f"\tProxy for Telegram       : {CLI.proxy}\n"
         f"\tEmail to                 : {CLI.email_to}\n"
+        f"\tEmail subject            : {CLI.email_subject}\n" 
         f"\tEmail SSL                : {CLI.email_ssl}\n"
         f"\tEmail AUTH               : {CLI.email_auth}\n" 
         f"\tEmail STARTTLS           : {CLI.email_starttls}\n"
@@ -880,7 +898,7 @@ def print_namespase():
     )
 
 
-def print_hr():
+def print_hr() -> None:
     """
     Pretty print a formatted horizontal line on stdout
     :return: None
@@ -907,7 +925,7 @@ def print_hr():
         )
 
 
-def print_heading():
+def print_heading() -> None:
     """
     Pretty print a formatted heading on stdout
     :return: None
@@ -937,19 +955,26 @@ def print_heading():
     print_hr()
 
 
-def print_domain(domain, whois_server, registrar, expiration_date, days_remaining, expire_days, cost,
-                 current_domain=None, error=None):
+def print_domain(domain: str,
+                 whois_server: Optional[str],
+                 registrar: Optional[str],
+                 expiration_date: Optional[datetime],
+                 days_remaining: int,
+                 expire_days: int,
+                 cost: float,
+                 current_domain: Optional[int] = None,
+                 error: Optional[int] = None) -> None:
     """
     Pretty print the domain information on stdout
-    :param domain: string
-    :param whois_server: string
-    :param registrar: string
-    :param expiration_date: date
-    :param days_remaining: integer
-    :param expire_days: integer
+    :param domain: str
+    :param whois_server: str
+    :param registrar: str
+    :param expiration_date: datetime
+    :param days_remaining: int
+    :param expire_days: int
     :param cost: float
-    :param current_domain: string
-    :param error: integer
+    :param current_domain: int
+    :param error: int
     :return: None
     """
     global G_DOMAINS_VALID
@@ -962,19 +987,19 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
     if not domain:
         domain = "-"
     else:
-        domain = str(domain).strip()
+        domain = domain.strip()
 
     if not whois_server:
         whois_server = "-"
     else:
-        whois_server = str(whois_server).strip()
+        whois_server = whois_server.strip()
 
     if not registrar:
         registrar = "-"
     else:
-        registrar = str(registrar).strip()
+        registrar = registrar.strip()
 
-    dn = "{:<35}".format(str(domain).lower())
+    dn = "{:<35}".format(domain.lower())
     wis = "{:<40}".format(whois_server)
     reg = "{:<60}".format(registrar)
 
@@ -1061,7 +1086,7 @@ def print_domain(domain, whois_server, registrar, expiration_date, days_remainin
         )
 
 
-def print_stat():
+def print_stat() -> None:
     """
     Print stat to console
     :return: None
@@ -1090,15 +1115,19 @@ def print_stat():
         print(f"")
 
 
-def check_domain(domain_name, expiration_days, cost, interval_time=None, current_domain=0):
+def check_domain(domain_name: str,
+                 expiration_days: int,
+                 cost: float,
+                 interval_time: Optional[int] = None,
+                 current_domain: int = 0) -> bool:
     """
     Check domain
-    :param domain_name: string
-    :param expiration_days: integer
+    :param domain_name: str
+    :param expiration_days: int
     :param cost: float
-    :param interval_time: integer
-    :param current_domain: integer
-    :return: False - Error, True - Successfully
+    :param interval_time: int
+    :param current_domain: int
+    :return: bool (False - Error, True - Successfully)
     """
     global EXPIRES_DOMAIN
     global ERRORS_DOMAIN
@@ -1120,7 +1149,7 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
         w = None
         try:
             w = whois.whois(domain_name)
-        except Exception as e:
+        except Exception:
             is_internal_error = True
             error = 1
 
@@ -1138,14 +1167,15 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
             if CLI.use_extra_external_whois:
                 expiration_date_e, registrar_e, whois_server_e, error = make_whois_query(
                     domain_name)
+
                 if error:
-                    if error == 1:
-                        if domain_name not in ERRORS_DOMAIN:
-                            ERRORS_DOMAIN.append(str(domain_name).lower())
-                    elif error == 2 or error == 22:
+                    if error == 1 or error == 22:
+                        if domain_name.lower() not in ERRORS_DOMAIN:
+                            ERRORS_DOMAIN.append(domain_name.lower())
+                    elif error == 2:
                         # Exceeded the limit on whois
                         if domain_name not in ERRORS2_DOMAIN:
-                            ERRORS2_DOMAIN.append(str(domain_name).lower())
+                            ERRORS2_DOMAIN.append(domain_name.lower())
                 if not expiration_date:
                     expiration_date = expiration_date_e
                 if not registrar:
@@ -1153,9 +1183,19 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
                 if not whois_server:
                     whois_server = whois_server_e
             else:
-                if domain_name not in ERRORS_DOMAIN:
-                    ERRORS_DOMAIN.append(str(domain_name).lower())
-                print_domain(domain_name, None, None, None, -1, -1, cost, current_domain, error)  # Error
+                if domain_name.lower() not in ERRORS_DOMAIN:
+                    ERRORS_DOMAIN.append(domain_name.lower())
+                print_domain(
+                    domain=domain_name,
+                    whois_server=None,
+                    registrar=None,
+                    expiration_date=None,
+                    days_remaining=-1,
+                    expire_days=-1,
+                    cost=cost,
+                    current_domain=current_domain,
+                    error=error
+                )  # Error
                 if current_domain < G_DOMAINS_TOTAL:
                     if interval_time:
                         if CLI.print_to_console:
@@ -1164,8 +1204,17 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
                 return False
 
     if (not whois_server) and (not registrar) and (not expiration_date):
-        print_domain(domain_name, whois_server, registrar,
-                     expiration_date, -2, -1, cost, current_domain, error)  # Free ?
+        print_domain(
+            domain=domain_name,
+            whois_server=whois_server,
+            registrar=registrar,
+            expiration_date=expiration_date,
+            days_remaining=-2,
+            expire_days=-1,
+            cost=cost,
+            current_domain=current_domain,
+            error=error
+        )  # Free ?
         if current_domain < G_DOMAINS_TOTAL:
             if interval_time:
                 if CLI.print_to_console:
@@ -1174,8 +1223,17 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
         return False
 
     if not expiration_date:
-        print_domain(domain_name, whois_server, registrar,
-                     expiration_date, -1, -1, cost, current_domain, error)  # Error
+        print_domain(
+            domain=domain_name,
+            whois_server=whois_server,
+            registrar=registrar,
+            expiration_date=expiration_date,
+            days_remaining=-1,
+            expire_days=-1,
+            cost=cost,
+            current_domain=current_domain,
+            error=error
+        )  # Error
         if current_domain < G_DOMAINS_TOTAL:
             if interval_time:
                 if CLI.print_to_console:
@@ -1190,19 +1248,45 @@ def check_domain(domain_name, expiration_days, cost, interval_time=None, current
 
     days_remaining = calculate_expiration_days(expiration_date_min)
 
-    print_domain(domain_name, whois_server, registrar, expiration_date_min, days_remaining,
-                 expiration_days, cost, current_domain, error)
+    print_domain(
+        domain=domain_name,
+        whois_server=whois_server,
+        registrar=registrar,
+        expiration_date=expiration_date_min,
+        days_remaining=days_remaining,
+        expire_days=expiration_days,
+        cost=cost,
+        current_domain=current_domain,
+        error=error
+    )
 
     if days_remaining < expiration_days:
-        EXPIRES_DOMAIN[str(domain_name).lower()] = days_remaining
+        EXPIRES_DOMAIN[domain_name.lower()] = days_remaining
 
     return True
 
 
-def prepaire_domains_list(file):
+def is_domain_supported(domain: str) -> bool:
+    """
+    Domain support check
+    :param domain: str
+    :return: bool
+    """
+    global ERRORS_DOMAIN
+    global G_DOMAINS_ERROR
+
+    if domain.lower().endswith(UNSUPPORTED_DOMAINS):
+        if domain.lower() not in ERRORS_DOMAIN:
+            G_DOMAINS_ERROR += 1
+            ERRORS_DOMAIN.append(domain.lower())
+        return False
+    return True
+
+
+def prepaire_domains_list(file: str) -> None:
     """
     Prepare Domains List from file
-    :param file: string
+    :param file: str
     :return: None
     """
     global G_DOMAINS_LIST
@@ -1223,14 +1307,14 @@ def prepaire_domains_list(file):
                 "expire_days": -1,
                 "interval_time": CLI.interval_time,
                 "cost": CLI.cost_per_domain,
+                "supported": True,
             })
 
             try:
                 ss = line.strip()
                 if len(ss) == 0:
                     continue
-
-                if len(ss) > 0:
+                else:
                     if ss.lstrip().startswith("!"):
                         # the group header
                         i += 1
@@ -1241,6 +1325,7 @@ def prepaire_domains_list(file):
                         domain_dict["expire_days"] = -1
                         domain_dict["interval_time"] = -1
                         domain_dict["cost"] = 0.00
+                        domain_dict["supported"] = True
                         G_DOMAINS_LIST.append(domain_dict.copy())
                         continue
 
@@ -1257,6 +1342,7 @@ def prepaire_domains_list(file):
                             continue
 
                         domain_dict["domain"] = domain_name
+                        domain_dict["supported"] = is_domain_supported(domain_name)
                         G_DOMAINS_TOTAL += 1
 
                         if len(word_list) > 1:
@@ -1270,12 +1356,12 @@ def prepaire_domains_list(file):
                                 if "sleep:" in item:
                                     # the interval value in seconds
                                     interval_time = int(
-                                        str(item).partition("sleep:")[2].strip())
+                                        item.partition("sleep:")[2].strip())
                                     domain_dict["interval_time"] = interval_time
                                 elif "cost:" in item:
                                     # the cost of this domain
                                     cost = float(
-                                        str(item).partition("cost:")[2].strip())
+                                        item.partition("cost:")[2].strip())
                                     domain_dict["cost"] = cost
                                 else:
                                     # the expiration value in days
@@ -1285,13 +1371,18 @@ def prepaire_domains_list(file):
 
                         G_DOMAINS_LIST.append(domain_dict.copy())
 
-            except Exception:
-                err = "Unable to parse the file with the list of domains.\nProblem line\n\"%s\"" % line.strip()
+            except Exception as e:
+                err = (
+                    f"Unable to parse the file with the list of domains.\n"
+                    f"Problem line\n"
+                    f"\"{line.strip()}\"\n"
+                    f"Error: {str(e)}"
+                )
                 print(f"{FLR}{err}")
                 sys.exit(1)
 
 
-def check_cli_logic():
+def check_cli_logic() -> None:
     """
     Check command line logic
     :return: None
@@ -1345,6 +1436,11 @@ def check_cli_logic():
             f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
         sys.exit(-1)
 
+    if CLI.email_subject and (not CLI.email_to):
+        print(
+            f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
+        sys.exit(-1)
+
     if CLI.email_auth and (not CLI.email_to):
         print(
             f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
@@ -1378,7 +1474,7 @@ def check_cli_logic():
         print_heading()
 
 
-def main():
+def main() -> None:
     """
     Main function
     :return: None
@@ -1396,7 +1492,7 @@ def main():
 
     if CLI.file:
         # Source data from file
-        file = str(CLI.file).strip()
+        file = CLI.file.strip()
         if not Path(file).is_file():
             print(f"{FLR}File {FLY}{file}{FLR} not found")
             sys.exit(-1)
@@ -1415,6 +1511,7 @@ def main():
                 expire_days = item["expire_days"]
                 interval_time = item["interval_time"]
                 cost = item["cost"]
+                is_supported = item["supported"]
 
                 if group != "":
                     i += 1
@@ -1438,10 +1535,23 @@ def main():
                     current_domain += 1
                     domain_name = domain
 
-                    # Domain Check
-                    if not check_domain(domain_name, expiration_days, cost, interval_time, current_domain):
-                        # If error - skip
-                        continue
+                    if not is_supported:
+                        dn = "{:<35}".format(domain_name.lower())
+                        dnn = f'{FLR}{dn}'
+                        number_domain = "{:>5}".format(current_domain)
+                        dnn = "{:<42}".format(number_domain + ". " + dnn)
+                        print(f"{dnn} Sorry, this domain is not supported.")
+                    else:
+                        # Domain Check
+                        if not check_domain(
+                                domain_name=domain_name,
+                                expiration_days=expiration_days,
+                                cost=cost,
+                                interval_time=interval_time,
+                                current_domain=current_domain
+                        ):
+                            # If error - skip
+                            continue
 
                     # Need to wait between queries to avoid triggering DOS measures like so:
                     # Your IP has been restricted due to excessive access, please wait a bit
@@ -1467,9 +1577,23 @@ def main():
         domain_name = CLI.domain
         expiration_days = CLI.expire_days
         cost = CLI.cost_per_domain
+        is_supported = is_domain_supported(domain_name)
 
-        # Domain Check
-        check_domain(domain_name, expiration_days, cost, None, 1)
+        if not is_supported:
+            dn = "{:<35}".format(domain_name.lower())
+            dnn = f'{FLR}{dn}'
+            number_domain = "{:>5}".format(1)
+            dnn = "{:<42}".format(number_domain + ". " + dnn)
+            print(f"{dnn} Sorry, this domain is not supported.")
+        else:
+            # Domain Check
+            check_domain(
+                domain_name=domain_name,
+                expiration_days=expiration_days,
+                cost=cost,
+                interval_time=None,
+                current_domain=1
+            )
 
         if CLI.print_to_console:
             print_hr()

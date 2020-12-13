@@ -67,3 +67,6 @@ artsoptilab.cn
 aolab.cn
 aolab.com.cn
 artsoptilab.cn
+
+! Unsupported domains
+whitehouse.gov
