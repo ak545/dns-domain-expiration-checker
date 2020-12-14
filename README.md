@@ -20,97 +20,100 @@ If you are here, it is possible that your domain has expired and you have coped 
 The script requires **Python version 3.6 or higher**.
 Of course, you need to install it yourself first [Python](https://www.python.org/). On Linux, it is usually already installed. If not, install it, for example:
 
-    $ sudo yum install python3
-    $ sudo dnf install python3
-    $ sudo apt install python3
-    $ sudo pacman -S python
+```console
+$ sudo yum install python3
+$ sudo dnf install python3
+$ sudo apt install python3
+$ sudo pacman -S python
+```
 
 For Apple macOS:
-
-    $ xcode-select --install
+```console
+$ xcode-select --install
+```
 
 Install brew:
-
-    $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+```console
+$ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+```
 
 Install Python:
 
-    $ export PATH=/usr/local/bin:/usr/local/sbin:$PATH
-    $ brew install python
+```console
+$ export PATH=/usr/local/bin:/usr/local/sbin:$PATH
+$ brew install python
+```
 
 Note: [brew](https://brew.sh/)
 
 For Microsoft Windows download the [distribution package](https://www.python.org/downloads/windows/) and install it. I recommend downloading "Download Windows x86 executable installer" if you have a 32-bit OS and "Download Windows x86-64 web-based installer" if you have a 64-bit OS. During installation, I recommend checking all options (Documentation, pip, tcl / tk and IDLE, Python test suit, py launcher, for all users (requeres elevation)).
 
 Previously, you may need to update **pip** itself (Python module installer):
+```console
+$ python -m pip install --upgrade pip
+```
 
-    $ python -m pip install --upgrade pip
+### Installing and update dependencies
+```console
+$ pip install -U python-whois
+$ pip install -U python-dateutil
+$ pip install -U colorama
+```
+and
+```console
+$ pip install -U requests[socks]
+```    
+or
+```console
+$ pip install -U PySocks
+```
 
-### Installing dependencies
-    $ pip install python-whois
-    $ pip install python-dateutil
-    $ pip install colorama
-
-    $ pip install requests[socks]
-    or
-    $ pip install PySocks
-
-### Dependency update
-    $ pip install --upgrade python-whois
-    $ pip install --upgrade python-dateutil
-    $ pip install --upgrade colorama
-
-    $ pip install --upgrade requests[socks]
-    or
-    $ pip install --upgrade PySocks
+If you are running Linux or macOS, and you plan to run the script as the current user, then additionally specify the **--user** option. In this case, the necessary dependencies will be installed into the home folder of the current system user and are available when launched from the task scheduler (cron) on behalf of this current user.
 
 Depending on your Pyton environment, your actions will be slightly different, for example, you may need to specify the **--user** key (for **pip**) or use the **python3** and **pip3** commands instead of the **python** and **pip** commands. If you use [virtual environments](https://docs.python.org/3/library/venv.html), then most likely, you will need to do all of these actions after entering the appropriate environment.
 
 ## Usage
-    $ ddec.py -h
-    usage: ddec.py [-h] [-v] [-f FILE] [-d STRING] [-c] [-l] [-i SECONDS]
-                [-x DAYS] [-t] [-p URL] [-e EMAIL] [-ssl] [-starttls] [-si]
-                [-oe] [-ee] [-nb]
+```console
+$ ddec.py -h
+usage: ddec.py [-h] [-v] [-f FILE] [-d STRING] [-c] [-l] [-i SECONDS]
+[-x DAYS] [-s FLOAT] [-t] [-p URL] [-e EMAIL] [-subject STRING] [-ssl]
+[-auth] [-starttls] [-oe] [-ee] [-nb]
 
-    DNS Domain Expiration Checker A simple python script to display or notify a
-    user by email and/or via Telegram about the status of the domain and the
-    expiration date.
+DNS Domain Expiration Checker A simple python script to display or notify a 
+user by email and/or via Telegram about the status of the domain and the 
+expiration date.
 
-    Options:
-    -h, --help            Help
-    -v, --version         Display the version number
-    -f FILE, --file FILE  Path to the file with the list of domains (default is
-                            None)
-    -d STRING, --domain STRING
-                            Domain to check expiration on (default is None)
-    -c, --print-to-console
-                            Enable console printing (default is False)
-    -l, --long-format     Enable detailed print in console (default is False)
-    -i SECONDS, --interval-time SECONDS
-                            Time to sleep between whois queries (in seconds,
-                            default is 60)
-    -x DAYS, --expire-days DAYS
-                            Expiration threshold to check against (in days,
-                            default is 60)
-    -s FLOAT, --cost-per-domain FLOAT
-                            The cost per one domain (in your currency, default is
-                            0.00)
-    -t, --use-telegram    Send a warning message through the Telegram (default
-                            is False)
-    -p URL, --proxy URL   Proxy link (for Telegram only), for example:
-                            socks5://127.0.0.1:9150 (default is None)
-    -e EMAIL, --email-to EMAIL
-                            Send a warning message to email address (default is
-                            None)
-    -ssl, --email-ssl     Send email via SSL (default is False)
-    -starttls, --email-starttls
-                            Send email via STARTTLS (default is False)
-    -oe, --use-only-external-whois
-                            Use only external utility whois (default is False)
-    -ee, --use-extra-external-whois
-                            Use external whois utility for additional analysis
-                            (default is False)
-    -nb, --no-banner      Do not print banner (default is False)
+Options:
+-h, --help            Help
+-v, --version         Display the version number
+-f FILE, --file FILE  Path to the file with the list of domains (default is None)
+-d STRING, --domain STRING
+                        Domain to check expiration on (default is None)
+-c, --print-to-console
+                        Enable console printing (default is False)
+-l, --long-format     Enable detailed print in console (default is False)
+-i SECONDS, --interval-time SECONDS
+                        Time to sleep between whois queries (in seconds, default is 60)
+-x DAYS, --expire-days DAYS
+                        Expiration threshold to check against (in days, default is 60)
+-s FLOAT, --cost-per-domain FLOAT
+                        The cost per one domain (in your currency, default is 0.00)
+-t, --use-telegram    Send a warning message through the Telegram (default is False)
+-p URL, --proxy URL   Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None)
+-e EMAIL, --email-to EMAIL
+                        Send a warning message to email address (default is None)
+-subject STRING, --email-subject STRING
+                        Append custom text to the email subject (default is None)
+-ssl, --email-ssl     Send email via SSL (default is False)
+-auth, --email-auth   Send email via authenticated SMTP (default is False)
+-starttls, --email-starttls
+                        Send email via STARTTLS (default is False)
+-oe, --use-only-external-whois
+                        Use only external utility whois (default is False)
+-ee, --use-extra-external-whois
+                        Use external whois utility for additional analysis (default is False)
+-nb, --no-banner      Do not print banner (default is False)
+```
 
 ### Description of options
 **-h, --help**
@@ -126,12 +129,14 @@ Display the version number
 Path to the file with the list of domains (default is None)
 
 #### File format with a list of domains
+```bash
     domain [%days%] [sleep:%seconds%] [cost:%cost%]
     domain [sleep:%seconds%] [%days%]
     domain [%days%]
     domain [sleep:%seconds%]
     domain [cost:%cost%]
     domain
+```
 
 **domain** - Domain name
 
@@ -145,74 +150,76 @@ The file must be encoded in **UTF-8 without BOM**, the format of the new line: *
 
 
 #### Sample domain list file
-    #-------------------------------------------------------------
-    #
-    # Example file with the list of domains
-    # Allowed:
-    # - blank lines
-    # - string as comment
-    # (the string must begin with the character "#")
-    # - string as the name of the group header
-    # (the string must begin with the character "!")
-    #
-    # The format for setting the domain string is:
-    # - domain name (required first)
-    # - expiration value in days (integer)
-    # - interval value in seconds before proceeding to
-    # the next check (sleep:integer)
-    # - the cost of renewing a domain (cost:float)
-    #
-    # For example:
-    # ! Group 1
-    # domain_name
-    # domain_name integer
-    #
-    # ! Group 2
-    # domain_name integer sleep:integer cost:float
-    # domain_name sleep:integer integer
-    # domain_name sleep:integer
-    #
-    # If the expiration value in days is not specified,
-    # the default value is used or from the command
-    # line parameter
-    #
-    # If the interval value in seconds is not specified
-    # before moving on to the next check,
-    # the default value or from the command line parameter
-    # is used.
-    #
-    # If the cost of renewing a domain is not specified,
-    # the default value is used or from the command
-    # line parameter
-    #
-    #-------------------------------------------------------------
+```bash
+#-------------------------------------------------------------
+#
+# Example file with the list of domains
+# Allowed:
+# - blank lines
+# - string as comment
+# (the string must begin with the character "#")
+# - string as the name of the group header
+# (the string must begin with the character "!")
+#
+# The format for setting the domain string is:
+# - domain name (required first)
+# - expiration value in days (integer)
+# - interval value in seconds before proceeding to
+# the next check (sleep:integer)
+# - the cost of renewing a domain (cost:float)
+#
+# For example:
+# ! Group 1
+# domain_name
+# domain_name integer
+#
+# ! Group 2
+# domain_name integer sleep:integer cost:float
+# domain_name sleep:integer integer
+# domain_name sleep:integer
+#
+# If the expiration value in days is not specified,
+# the default value is used or from the command
+# line parameter
+#
+# If the interval value in seconds is not specified
+# before moving on to the next check,
+# the default value or from the command line parameter
+# is used.
+#
+# If the cost of renewing a domain is not specified,
+# the default value is used or from the command
+# line parameter
+#
+#-------------------------------------------------------------
 
-    ! The sample of the group header
-    a.ru
-    linux.cafe 1000 sleep:8 cost:20.55
-    cyberciti.biz sleep:10 70
-    dotmobi.mobi 80
-    spotch.com sleep:15
-    yahoo.com
-    prefetch.net
-    nixcraft.com
-    abc.xyz
-    codepen.io
-    habr.com
-    freepascal.org
-    mikrotik.com
-    git-scm.com
-    github.com
-    python.org
+! The sample of the group header
+a.ru
+linux.cafe 1000 sleep:8 cost:20.55
+cyberciti.biz sleep:10 70
+dotmobi.mobi 80
+spotch.com sleep:15
+yahoo.com
+prefetch.net
+nixcraft.com
+abc.xyz
+codepen.io
+habr.com
+freepascal.org
+mikrotik.com
+git-scm.com
+github.com
+python.org
 
-    ! Social networks
-    livejournal.com
-    facebook.com
-    twitter.com
+! Social networks
+livejournal.com
+facebook.com
+twitter.com
 
-    ! Youtube
-    youtube.tv
-    youtube.com
+! Youtube
+youtube.tv
+youtube.com
+```
 
 **-d STRING, --domain STRING**
 
@@ -292,25 +299,30 @@ In most Linux operating systems, whois is already available. If not, install it.
 For example:
 
 For Ubuntu/Debian:
-
-    $ sudo apt update && sudo apt upgrade
-    $ sudo apt install whois
+```console
+$ sudo apt update && sudo apt upgrade
+$ sudo apt install whois
+```
 
 For RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x:
-
-    $ sudo yum install jwhois
+```console
+$ sudo yum install jwhois
+```
 
 For RHEL 8.x/CentOS 8.x/Fedora 22 and higher:
-
-    $ sudo dnf install jwhois
+```console
+$ sudo dnf install jwhois
+```
 
 For Arch/Manjaro:
-
-    $ sudo pacman -S whois
+```console
+$ sudo pacman -S whois
+```
 
 For Apple macOS:
-
-    $ brew install whois
+```console
+$ brew install whois
+```
 
 For OS Microsoft Windows, it is best to use **cygwin** forks **whois**.
 
@@ -322,9 +334,9 @@ After installing **cygwin**, open a command prompt with administrator privileges
 Note: use **CMD.exe**, do not use *Powershell* (for it the command is completely different)!
 
 Run the command (*see below*; in Windows 7/8/8.1/10 **environment variables** can be changed via the graphical user interface):
-
-    setx /M PATH "c:\cygwin64\bin;%PATH%"
-
+```console
+> setx /M PATH "c:\cygwin64\bin;%PATH%"
+```
 Note! For the full work of the utility **whois** from the package **cygwin** files are required:
 
     whois.exe
@@ -478,58 +490,67 @@ Your home folder: **/home/user**
 The folder where this script is located: **/home/user/py**
 
 To run the script directly, run the command:
-
-    $ chmod +x /home/user/py/ddec.py
+```console
+$ chmod +x /home/user/py/ddec.py
+```
 
 Adjust in the first line of the script [Shebang (Unix)](https://en.wikipedia.org/wiki/Shebang_(Unix)), eg:
 
 Show the path where python is located:
-
-    $ which python
-
+```console
+$ which python
+```
 or
-
-    $ which python3
-
+```console
+$ which python3
+```
 Correction python path in Shebang:
 
-    #!/usr/bin/python
-    #!/usr/bin/python3
-    #!/usr/bin/env python
-    #!/usr/bin/env python3
+```python
+#!/usr/bin/python
+#!/usr/bin/python3
+#!/usr/bin/env python
+#!/usr/bin/env python3
+```
 
 Rename script:
 
-    $ mv /home/user/py/ddec.py /home/user/py/ddec
-
+```console
+$ mv /home/user/py/ddec.py /home/user/py/ddec
+```
 Check script launch:
 
-    $ /home/user/py/ddec -h
-    $ /home/user/py/./ddec -h
-
+```console
+$ /home/user/py/ddec -h
+$ /home/user/py/./ddec -h
+```
 If everything is fine, run the editor **crontab**, if not, go back to setting **Shebang**:
 
-    $ crontab -u user -e
-    Here user - is your Linux login
+```console
+$ crontab -u user -e
+```
+Here **user** - is your Linux login
 
 If you, like me, do not like vim (I have not seen a single person who is fluent in this editor, although it probably exists somewhere), you can edit the tasks in your favorite editor, for example:
 
-    $ EDITOR=nano crontab -u user -e
-    $ EDITOR=mcedit crontab -u user -e
-
+```console
+$ EDITOR=nano crontab -u user -e
+$ EDITOR=mcedit crontab -u user -e
+```
 or
 
-    $ VISUAL=nano crontab -u user -e
-    $ VISUAL=mcedit crontab -u user -e
-
+```console
+$ VISUAL=nano crontab -u user -e
+$ VISUAL=mcedit crontab -u user -e
+```
 
 In the task editor, create something like this (do not use keys **--print-to-console** and **--long-format**):
 
-    0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
+`0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
 
 or
 
-    0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
+`0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
 
 
 Specify the full paths to the data file and the script.
@@ -538,21 +559,23 @@ Note: [cron](https://en.wikipedia.org/wiki/Cron)
 
 You can view created tasks for user **user** like this:
 
-    $ crontab -u user -l
-
+```console
+$ crontab -u user -l
+```
 Delete all tasks from user **user**, you can:
 
-    $ crontab -u user -r
-
+```console
+$ crontab -u user -r
+```
 ## How to add a script to Microsoft Windows Task Scheduler
 Ask for help to [documentation](https://docs.microsoft.com/en-us/windows/desktop/taskschd/schtasks)
 
 **Sample:**
 
-`schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
+`> schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
 
 ## Thanks for the idea
-To the author of the original script / Автору оригинального скрипта: Matty < matty91 at gmail dot com > [https://github.com/Matty9191](https://github.com/Matty9191)
+To the author of the original script: Matty < matty91 at gmail dot com > [https://github.com/Matty9191](https://github.com/Matty9191)
 
 ## License
 [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/)
@@ -563,7 +586,7 @@ I, the author of this python script, wrote this script exclusively for my needs.
 You can make any changes to the script code and fork this script, provided that the link to me and [Matty](https://github.com/Matty9191) is indicated as a source of your inspiration.
 
 ## Postscriptum
-- The script was tested in Microsoft Windows 10, Linux Fedora 29/30/31/32, Linux Ubuntu Descktop 18.04/20.04, Linux CentOS 6/7/8, Linux Manjaro 18.0.2.
+- The script was tested in Microsoft Windows 10, Linux Fedora 29/30/31/32/33, Linux Ubuntu Desktop 18.04/20.04/20.10, Linux CentOS 6/7/8, Linux Manjaro 18.0.2/20.2.
 - Sorry for my bad English.
 - The program code of the script is not perfect. But please forgive me for that. At the time of writing this Python script, I have been studying for only two weeks. I like this programming language, it is much simpler and at the same time more powerful than other programming languages that I own.
 - All recommendations given by me for Apple macOS may contain inaccuracies. Sorry, I don’t have an Apple macBook on hand (but what if someone gives it to me?).

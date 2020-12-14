@@ -21,23 +21,31 @@
 Для работы скрипта необходим **Python версии 3.6 или выше**.
 Разумеется, необходимо сперва установить сам [Python](https://www.python.org/). В Linux он обычно уже установлен. Если нет, установите его, например:
 
-    $ sudo yum install python3
-    $ sudo dnf install python3
-    $ sudo apt install python3
-    $ sudo pacman -S python
+```console
+$ sudo yum install python3
+$ sudo dnf install python3
+$ sudo apt install python3
+$ sudo pacman -S python
+```
 
 Для Apple macOS:
     
-    $ xcode-select --install
-    
+```console
+$ xcode-select --install
+```
+
 Установите brew:
 
-    $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+```console
+$ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+```
 
 Установите Python:
 
-    $ export PATH=/usr/local/bin:/usr/local/sbin:$PATH
-    $ brew install python
+```console
+$ export PATH=/usr/local/bin:/usr/local/sbin:$PATH
+$ brew install python
+```
 
 Примечание: [brew](https://brew.sh/index_ru)
 
@@ -45,73 +53,70 @@
 
 Предварительно, возможно понадобится обновить сам **pip** (установщик модулей Python):
 
-    $ python -m pip install --upgrade pip
+```console
+$ python -m pip install --upgrade pip
+```
 
-### Установка зависимостей
-    $ pip install python-whois
-    $ pip install python-dateutil
-    $ pip install colorama
-    
-    $ pip install requests[socks]
-    или
-    $ pip install PySocks
-
-### Обновление зависимостей
-    $ pip install --upgrade python-whois
-    $ pip install --upgrade python-dateutil
-    $ pip install --upgrade colorama
-
-    $ pip install --upgrade requests[socks]
-    или
-    $ pip install --upgrade PySocks
+### Установка и обновление зависимостей
+```console
+$ pip install -U python-whois
+$ pip install -U python-dateutil
+$ pip install -U colorama
+```
+и
+```console
+$ pip install -U requests[socks]
+```
+или
+```console
+$ pip install -U PySocks
+```
+Если Вы работаете под управлением Linux или macOS, и запуск скрипта планируете производить от имени текущего пользователя, то дополнительно указывайте опцию **--user**. В этом случае необходимые зависимости будут устанавливаться в домашнюю папку текущего пользователя системы и доступны при запуске из планировщика задач (cron) от имени этого текущего пользователя.
 
 В зависимости от вашего Pyton окружения, ваши действия будут немного иными, например, возможно, вам потребуется указать ключ **--user** (для **pip**) или вместо команд **python** и **pip** использовать команды **python3** и **pip3**. Если вы используете [виртуальные окружения](https://docs.python.org/3/library/venv.html), то скорее всего, все эти действия вам необходимо будет сделать после входа в соответствующее окружение.
 
 ## Использование
-    $ ddec.py -h
-    usage: ddec.py [-h] [-v] [-f FILE] [-d STRING] [-c] [-l] [-i SECONDS]
-                [-x DAYS] [-t] [-p URL] [-e EMAIL] [-ssl] [-starttls] [-si]
-                [-oe] [-ee] [-nb]
+```console
+$ ddec.py -h
+usage: ddec.py [-h] [-v] [-f FILE] [-d STRING] [-c] [-l] [-i SECONDS]
+[-x DAYS] [-s FLOAT] [-t] [-p URL] [-e EMAIL] [-subject STRING] [-ssl]
+[-auth] [-starttls] [-oe] [-ee] [-nb]
 
-    DNS Domain Expiration Checker A simple python script to display or notify a
-    user by email and/or via Telegram about the status of the domain and the
-    expiration date.
+DNS Domain Expiration Checker A simple python script to display or notify a 
+user by email and/or via Telegram about the status of the domain and the 
+expiration date.
 
-    Options:
-    -h, --help            Help
-    -v, --version         Display the version number
-    -f FILE, --file FILE  Path to the file with the list of domains (default is
-                            None)
-    -d STRING, --domain STRING
-                            Domain to check expiration on (default is None)
-    -c, --print-to-console
-                            Enable console printing (default is False)
-    -l, --long-format     Enable detailed print in console (default is False)
-    -i SECONDS, --interval-time SECONDS
-                            Time to sleep between whois queries (in seconds,
-                            default is 60)
-    -x DAYS, --expire-days DAYS
-                            Expiration threshold to check against (in days,
-                            default is 60)
-    -s FLOAT, --cost-per-domain FLOAT
-                            The cost per one domain (in your currency, default is
-                            0.00)
-    -t, --use-telegram    Send a warning message through the Telegram (default
-                            is False)
-    -p URL, --proxy URL   Proxy link (for Telegram only), for example:
-                            socks5://127.0.0.1:9150 (default is None)
-    -e EMAIL, --email-to EMAIL
-                            Send a warning message to email address (default is
-                            None)
-    -ssl, --email-ssl     Send email via SSL (default is False)
-    -starttls, --email-starttls
-                            Send email via STARTTLS (default is False)
-    -oe, --use-only-external-whois
-                            Use only external utility whois (default is False)
-    -ee, --use-extra-external-whois
-                            Use external whois utility for additional analysis
-                            (default is False)
-    -nb, --no-banner      Do not print banner (default is False)    
+Options:
+-h, --help            Help
+-v, --version         Display the version number
+-f FILE, --file FILE  Path to the file with the list of domains (default is None)
+-d STRING, --domain STRING
+                        Domain to check expiration on (default is None)
+-c, --print-to-console
+                        Enable console printing (default is False)
+-l, --long-format     Enable detailed print in console (default is False)
+-i SECONDS, --interval-time SECONDS
+                        Time to sleep between whois queries (in seconds, default is 60)
+-x DAYS, --expire-days DAYS
+                        Expiration threshold to check against (in days, default is 60)
+-s FLOAT, --cost-per-domain FLOAT
+                        The cost per one domain (in your currency, default is 0.00)
+-t, --use-telegram    Send a warning message through the Telegram (default is False)
+-p URL, --proxy URL   Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None)
+-e EMAIL, --email-to EMAIL
+                        Send a warning message to email address (default is None)
+-subject STRING, --email-subject STRING
+                        Append custom text to the email subject (default is None)
+-ssl, --email-ssl     Send email via SSL (default is False)
+-auth, --email-auth   Send email via authenticated SMTP (default is False)
+-starttls, --email-starttls
+                        Send email via STARTTLS (default is False)
+-oe, --use-only-external-whois
+                        Use only external utility whois (default is False)
+-ee, --use-extra-external-whois
+                        Use external whois utility for additional analysis (default is False)
+-nb, --no-banner      Do not print banner (default is False)
+```
 
 ### Описание опций
 **-h, --help**
@@ -127,12 +132,14 @@
 Путь к файлу со списком доменов (по умолчанию Нет)
 
 #### Формат файла со списком доменов
+```bash
     domain [%days%] [sleep:%seconds%] [cost:%cost%]
     domain [sleep:%seconds%] [%days%]
     domain [%days%]
     domain [sleep:%seconds%]
     domain [cost:%cost%]
     domain
+```
 
 **domain** - Имя домена
 
@@ -145,74 +152,76 @@
 Файл должен быть в кодировке **UTF-8 без ВОМ**, формат новой строки: **Unix (0Ah)**
 
 #### Пример файла со списком доменов
-    #-------------------------------------------------------------
-    #
-    # Пример файла со списком доменов
-    # Допускается:
-    # - пустые строки
-    # - строка - комментарий
-    # (строка должна начинаться с символа "#")
-    # - строка - название заголовка группы
-    # (строка должна начинаться с символа "!")
-    #
-    # Формат задания строки домена:
-    # - имя домена (обязательно первым)
-    # - значение истечения срока в днях (целое число)
-    # - значение интервала в секундах перед тем
-    # как перейти к следующей проверке (sleep:целое число)
-    # - стоимость продления домена (cost:float)
-    #
-    # Например:
-    # ! Группа 1
-    # имя_домена
-    # имя_домена число
-    #
-    # ! Группа 2
-    # имя_домена число sleep:число cost:float
-    # имя_домена sleep:число число 
-    # имя_домена sleep:число
-    #
-    # Если значение истечения срока в днях не задано,
-    # используется значение по-умолчанию или из параметра
-    # командной строки
-    #
-    # Если значение интервала в секундах перед тем как
-    # перейти к следующей проверке не задано,
-    # используется значение по-умолчанию или из параметра
-    # командной строки
-    #
-    # Если значение стоимости продления домена не задано,
-    # используется значение по-умолчанию или из параметра
-    # командной строки
-    #
-    #-------------------------------------------------------------
-    
-    ! Это пример заголовка группы
-    a.ru
-    linux.cafe 1000 sleep:8 cost:890.00
-    cyberciti.biz sleep:10 70
-    dotmobi.mobi 80
-    spotch.com sleep:15
-    yahoo.com
-    prefetch.net
-    nixcraft.com
-    abc.xyz
-    codepen.io
-    habr.com
-    freepascal.org
-    mikrotik.com
-    git-scm.com
-    github.com
-    python.org
+```bash
+#-------------------------------------------------------------
+#
+# Пример файла со списком доменов
+# Допускается:
+# - пустые строки
+# - строка - комментарий
+# (строка должна начинаться с символа "#")
+# - строка - название заголовка группы
+# (строка должна начинаться с символа "!")
+#
+# Формат задания строки домена:
+# - имя домена (обязательно первым)
+# - значение истечения срока в днях (целое число)
+# - значение интервала в секундах перед тем
+# как перейти к следующей проверке (sleep:целое число)
+# - стоимость продления домена (cost:float)
+#
+# Например:
+# ! Группа 1
+# имя_домена
+# имя_домена число
+#
+# ! Группа 2
+# имя_домена число sleep:число cost:float
+# имя_домена sleep:число число 
+# имя_домена sleep:число
+#
+# Если значение истечения срока в днях не задано,
+# используется значение по-умолчанию или из параметра
+# командной строки
+#
+# Если значение интервала в секундах перед тем как
+# перейти к следующей проверке не задано,
+# используется значение по-умолчанию или из параметра
+# командной строки
+#
+# Если значение стоимости продления домена не задано,
+# используется значение по-умолчанию или из параметра
+# командной строки
+#
+#-------------------------------------------------------------
 
-    ! Социальные сети
-    livejournal.com
-    facebook.com
-    twitter.com
+! Это пример заголовка группы
+a.ru
+linux.cafe 1000 sleep:8 cost:890.00
+cyberciti.biz sleep:10 70
+dotmobi.mobi 80
+spotch.com sleep:15
+yahoo.com
+prefetch.net
+nixcraft.com
+abc.xyz
+codepen.io
+habr.com
+freepascal.org
+mikrotik.com
+git-scm.com
+github.com
+python.org
 
-    ! Youtube
-    youtube.tv  
-    youtube.com
+! Социальные сети
+livejournal.com
+facebook.com
+twitter.com
+
+! Youtube
+youtube.tv  
+youtube.com
+```
 
 **-d STRING, --domain STRING**
 
@@ -293,24 +302,34 @@
 
 Для Ubuntu/Debian:
 
-    $ sudo apt update && sudo apt upgrade
-    $ sudo apt install whois
+```console
+$ sudo apt update && sudo apt upgrade
+$ sudo apt install whois
+```
 
 Для RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x:
 
-    $ sudo yum install jwhois
+```console
+$ sudo yum install jwhois
+```
 
 Для RHEL 8.x/CentOS 8.x/Fedora 22 и выше:
 
-    $ sudo dnf install jwhois
+```console
+$ sudo dnf install jwhois
+```
 
 Для Arch/Manjaro:
 
-    $ sudo pacman -S whois
+```console
+$ sudo pacman -S whois
+```
 
 Для Apple macOS:
 
-    $ brew install whois
+```console
+$ brew install whois
+```
 
 
 Для ОС Microsoft Windows лучше всего использовать форк **whois** из пакета **cygwin**. 
@@ -323,7 +342,9 @@
 
 Выполните команду (*смотрите ниже*; в Windows 7/8/8.1/10 **переменные среды** можно изменять через графический интерфейс пользователя):
 
-    setx /M PATH "c:\cygwin64\bin;%PATH%"
+```console
+> setx /M PATH "c:\cygwin64\bin;%PATH%"
+```
 
 Обратите внимание! Для полноценной работы утилиты **whois** из состава пакета **cygwin** требуются файлы:
 
@@ -478,58 +499,71 @@ Telegram API URL
 
 Чтобы запускать скрипт напрямую, выполните команду:
     
-    $ chmod +x /home/user/py/ddec.py
+```console
+$ chmod +x /home/user/py/ddec.py
+```
 
 Скорректируйте в первой строке скрипта [Шебанг (Unix)](https://ru.wikipedia.org/wiki/%D0%A8%D0%B5%D0%B1%D0%B0%D0%BD%D0%B3_(Unix)), например:
 
 Показать путь, где расположен python:
     
-    $ which python
-
+```console
+$ which python
+```
 или
-
-    $ which python3
+```console
+$ which python3
+```
     
 Коррекция пути python в Шебанг:
 
-    #!/usr/bin/python
-    #!/usr/bin/python3
-    #!/usr/bin/env python
-    #!/usr/bin/env python3
+```python
+#!/usr/bin/python
+#!/usr/bin/python3
+#!/usr/bin/env python
+#!/usr/bin/env python3
+```
 
 Переименуйте скрипт:
 
-    $ mv /home/user/py/ddec.py /home/user/py/ddec
+```console
+$ mv /home/user/py/ddec.py /home/user/py/ddec
+```
 
 Проверьте запуск скрипта:
 
-    $ /home/user/py/ddec -h
-    $ /home/user/py/./ddec -h
+```console
+$ /home/user/py/ddec -h
+$ /home/user/py/./ddec -h
+```
 
 Если всё нормально, запустите редактор **crontab**, если нет, вернитесь к настройке **Шебанг**:
 
-    $ crontab -u user -e
-    Здесь user - это ваш логин в Linux
+```console
+$ crontab -u user -e
+```
+Здесь **user** - это ваш логин в Linux
 
 
 Если вы, как и я не любите vim (я не видел ни одного человека, в совершенстве владеющего этим редактором, хотя, наверное, он где-то есть), вы можете редактировать задачи в вашем любимом редакторе, например, так:
 
-    $ EDITOR=nano crontab -u user -e
-    $ EDITOR=mcedit crontab -u user -e
-
+```console
+$ EDITOR=nano crontab -u user -e
+$ EDITOR=mcedit crontab -u user -e
+```
 или
-
-    $ VISUAL=nano crontab -u user -e
-    $ VISUAL=mcedit crontab -u user -e
-
+```console
+$ VISUAL=nano crontab -u user -e
+$ VISUAL=mcedit crontab -u user -e
+```
 
 В файле задач создайте примерно такую запись (не используйте ключи **--print-to-console** и **--long-format**):
 
-    0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1
+`0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
 
 или
 
-    0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1    
+`0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
 
 Указывайте полные пути к файлу данных и скрипту.
 
@@ -537,11 +571,15 @@ Telegram API URL
 
 Посмотреть созданные задачи для пользователя **user** можно так:
 
-    $ crontab -u user -l
+```console
+$ crontab -u user -l
+```
 
 Удалить все задачи пользователя **user** можно так:
 
-    $ crontab -u user -r
+```console
+$ crontab -u user -r
+```
 
 
 ## Как добавить скрипт в Планировщик заданий Microsoft Windows
@@ -549,7 +587,7 @@ Telegram API URL
 
 **Пример:**
 
-`schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
+`> schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
 
 ## Спасибо за идею
 Автору оригинального скрипта: Matty < matty91 at gmail dot com > [https://github.com/Matty9191](https://github.com/Matty9191)
@@ -563,7 +601,7 @@ Telegram API URL
 Вы можете вносить любые правки в код скрипта и делать форк этого скрипта при условии указания ссылки на меня и на [Matty](https://github.com/Matty9191), как источника вашего вдохновения.
 
 ## Постскриптум
-- Работа скрипта проверялась в Microsoft Windows 10, Linux Fedora 29/30/31/32, Linux Ubuntu Descktop 18.04/20.04, Linux CentOS 6/7/8, Linux Manjaro 18.0.2.
+- Работа скрипта проверялась в Microsoft Windows 10, Linux Fedora 29/30/31/32/33, Linux Ubuntu Desktop 18.04/20.04/20.10, Linux CentOS 6/7/8, Linux Manjaro 18.0.2/20.2.
 - Программный код скррипта не идеален. Но прошу простить меня за это. На момент написания этого скрипта, Python я изучаю всего две недели. Мне нравится этот язык программирования, он намного проще и вместе с тем мощнее, чем другие языки программирования, которыми я владею. 
 - Все рекомендации данные мной для Apple macOS могут содержать в себе неточности. Простите, у меня нет под рукой Apple macBook (но вдруг, кто-то подарит мне его?).
 - Да здравствует E = mc&sup2; !
