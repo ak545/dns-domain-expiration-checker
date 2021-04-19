@@ -14,9 +14,9 @@
 # Carl Mercier (https://github.com/cmer)
 # Leif (https://github.com/akhepcat)
 #
-# Current Version: 0.2.9
+# Current Version: 0.2.10
 # Creation Date: 2019-07-05
-# Date of last changes: 2020-12-14
+# Date of last changes: 2021-04-19
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -74,7 +74,7 @@ if sys.version_info < (3, 6):
     sys.exit(-1)
 
 # Global constants
-__version__ = "0.2.9"
+__version__ = "0.2.10"
 FR = Fore.RESET
 FLW = Fore.LIGHTWHITE_EX
 FLG = Fore.LIGHTGREEN_EX
@@ -1427,28 +1427,28 @@ def check_cli_logic() -> None:
         print(
             f"{FLR}You must use at least one of the notification methods "
             f"(email, telegram or console)\n"
-            f"Use --print-to-console or --use-email or/and --use-telegram"
+            f"Use --print-to-console or --email-to or/and --use-telegram"
         )
         sys.exit(-1)
 
     if CLI.email_ssl and (not CLI.email_to):
         print(
-            f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
+            f"{FLR}You must specify the email address of the recipient. Use the --email-to option")
         sys.exit(-1)
 
     if CLI.email_subject and (not CLI.email_to):
         print(
-            f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
+            f"{FLR}You must specify the email address of the recipient. Use the --email-to option")
         sys.exit(-1)
 
     if CLI.email_auth and (not CLI.email_to):
         print(
-            f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
+            f"{FLR}You must specify the email address of the recipient. Use the --email-to option")
         sys.exit(-1)
 
     if CLI.email_starttls and (not CLI.email_to):
         print(
-            f"{FLR}You must specify the email address of the recipient. Use the --email_to option")
+            f"{FLR}You must specify the email address of the recipient. Use the --email-to option")
         sys.exit(-1)
 
     if CLI.email_starttls and CLI.email_ssl and CLI.email_to:
