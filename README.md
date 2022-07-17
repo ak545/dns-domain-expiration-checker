@@ -39,6 +39,13 @@ $ sudo dnf install python3
 $ sudo apt install python3
 $ sudo pacman -S python
 ```
+Additionally, you will need a Python package installer, such as **pip**. You can install it on Linux like this:
+```console
+$ sudo yum install python3-pip
+$ sudo dnf install python3-pip
+$ sudo apt install python3-pip
+$ sudo pacman -S python-pip
+```
 
 For Apple macOS:
 ```console
@@ -61,9 +68,11 @@ Note: [brew](https://brew.sh/)
 
 For Microsoft Windows download the [distribution package](https://www.python.org/downloads/windows/) and install it. I recommend downloading "Download Windows x86 executable installer" if you have a 32-bit OS and "Download Windows x86-64 web-based installer" if you have a 64-bit OS. During installation, I recommend checking all options (Documentation, pip, tcl / tk and IDLE, Python test suit, py launcher, for all users (requeres elevation)).
 
-Previously, you may need to update **pip** itself (Python module installer):
+Previously, you may need to update **pip** itself (Python package installer):
 ```console
 $ python -m pip install --upgrade pip
+or
+> py -m pip install --upgrade pip
 ```
 
 ### Installing and update dependencies
@@ -83,7 +92,7 @@ $ pip install -U PySocks
 
 If you are running Linux or macOS, and you plan to run the script as the current user, then additionally specify the **--user** option. In this case, the necessary dependencies will be installed into the home folder of the current system user and are available when launched from the task scheduler (cron) on behalf of this current user.
 
-Depending on your Pyton environment, your actions will be slightly different, for example, you may need to specify the **--user** key (for **pip**) or use the **python3** and **pip3** commands instead of the **python** and **pip** commands. If you use [virtual environments](https://docs.python.org/3/library/venv.html), then most likely, you will need to do all of these actions after entering the appropriate environment.
+Depending on your Python environment, your actions will be slightly different, for example, you may need to specify the **--user** key (for **pip**) or use the **python3** and **pip3** commands instead of the **python** and **pip** commands. If you use [virtual environments](https://docs.python.org/3/library/venv.html), then most likely, you will need to do all of these actions after entering the appropriate environment.
 
 ## Usage
 ```console
@@ -274,7 +283,7 @@ Send a warning message through the Telegram (default is False)
 
 **-p URL, --proxy URL**
 
-Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None). In Russia, Roskomnadzor instructs all providers to block the work of Telegram. I will not tell you how to override Telegram blocking.
+Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None).
 
 **-e EMAIL, --email-to EMAIL**
 
@@ -487,8 +496,8 @@ Sets the national currency symbol
 Samples:
 
 ```python
-    G_CURRENCY_SYMBOL = '$'
-    # G_CURRENCY_SYMBOL = '¥'
+    # G_CURRENCY_SYMBOL = '$'
+    G_CURRENCY_SYMBOL = '¥'
     # G_CURRENCY_SYMBOL = '£'
     # G_CURRENCY_SYMBOL = '€'
     # G_CURRENCY_SYMBOL = '₽'
@@ -506,7 +515,7 @@ Samples:
     G_SOON_ADD = 21
 ```
 
-If --expire-days (or a similar value in the file of domain name lists) is 60 days, then 81 days before the end of the domain registration period (60 + 21), this domain will be in the "Soon" category. This option only affects how the domain will be printed in the console. No messages will be sent.
+If --expire-days (or a similar value in the file of domain name lists) is 60 days, then 81 days before the end of the domain registration period (60 + 21), this domain will be in the "Soon" category.
 
 ## How to add a script to Linux cron
 To do this, create a **crontab** task that will be executed, for example, every midnight on behalf of the user (creating tasks as root is not the best idea):
@@ -574,11 +583,11 @@ $ VISUAL=mcedit crontab -u user -e
 
 In the task editor, create something like this (do not use keys **--print-to-console** and **--long-format**):
 
-`0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
+`0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -twtc -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
 
 or
 
-`0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
+`0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -twtc -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
 
 
 Specify the full paths to the data file and the script.
@@ -600,7 +609,7 @@ Ask for help to [documentation](https://docs.microsoft.com/en-us/windows/desktop
 
 **Sample:**
 
-`> schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
+`> schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -twtc -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
 
 ## Thanks
 To the author of the original script: Matty < matty91 at gmail dot com > [https://github.com/Matty9191](https://github.com/Matty9191)
@@ -612,6 +621,8 @@ Special thanks for various suggestions and comments:
 
 ## License
 [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/)
+
+Why it's like this I don't know.
 
 ## Restrictions
 I, the author of this python script, wrote this script exclusively for my needs. No warranty is provided. You can use this script freely, without any deductions, for any purpose other than [Cybersquatting](https://en.wikipedia.org/wiki/Cybersquatting).
