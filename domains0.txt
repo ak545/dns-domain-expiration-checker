@@ -11,6 +11,7 @@
 # - значение истечения срока в днях (целое число)
 # - значение интервала в секундах перед тем как перейти к следующей проверке (sleep:целое число)
 # - стоимость продления домена (cost:float)
+# - пропустить проверку изменений текста whois для этого домена (skip_checking_whois_text_changes)
 #
 # Например:
 # ! Группа 1
@@ -18,7 +19,7 @@
 # имя_домена число
 #
 # ! Группа 2
-# имя_домена число sleep:число cost:float
+# имя_домена число sleep:число cost:float skip_checking_whois_text_changes
 # имя_домена sleep:число число 
 # имя_домена sleep:число
 #
@@ -33,6 +34,7 @@
 # командной строки
 #
 #
+#
 # Example file with the list of domains
 # Allowed:
 # - blank lines
@@ -44,6 +46,7 @@
 # - expiration value in days (integer)
 # - interval value in seconds before proceeding to the next check (sleep:integer)
 # - the cost of renewing a domain (cost:float)
+# - skip checking whois text changes for this domain (skip_checking_whois_text_changes)
 #
 # For example:
 # ! Group 1
@@ -51,7 +54,7 @@
 # domain_name integer
 #
 # ! Group 2
-# domain_name integer sleep:integer cost:float
+# domain_name integer sleep:integer cost:float skip_checking_whois_text_changes
 # domain_name sleep:integer integer
 # domain_name sleep:integer
 #
@@ -80,7 +83,7 @@ abc.xyz
 codepen.io
 habr.com
 freepascal.org
-mikrotik.com
+mikrotik.com skip_checking_whois_text_changes
 git-scm.com
 github.com
 python.org

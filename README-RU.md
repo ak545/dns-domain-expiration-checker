@@ -1,4 +1,6 @@
 # DNS Domain Expiration Checker from ak545
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+
 **ddec.py** - Это python-скрипт для проверки сроков окончания регистрации ваших доменов.
 
 Этот скрипт развивает идею другого скрипта [DNS Domain Expiration Checker](https://github.com/Matty9191/dns-domain-expiration-checker), Автор: Matty < matty91 at gmail dot com >
@@ -7,11 +9,23 @@
 ![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/script.png)
 > Скрипт в работе
 
+<details>
+<summary>Ещё больше</summary>
+
+![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/script2.png)
+> Скрипт в работе
+
 ![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/email.png)
+> Пример email
+
+![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/email2.png)
 > Пример email
 
 ![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/telegram.png)
 > Пример Telegram сообщения
+
+</details>
+
 
 
 ## Описание
@@ -37,7 +51,7 @@ $ xcode-select --install
 Установите brew:
 
 ```console
-$ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
 Установите Python:
@@ -78,44 +92,47 @@ $ pip install -U PySocks
 ## Использование
 ```console
 $ ddec.py -h
-usage: ddec.py [-h] [-v] [-f FILE] [-d STRING] [-c] [-l] [-i SECONDS]
-[-x DAYS] [-s FLOAT] [-t] [-p URL] [-e EMAIL] [-subject STRING] [-ssl]
-[-auth] [-starttls] [-oe] [-ee] [-nb]
+usage:  ddec.py [Options]
 
-DNS Domain Expiration Checker A simple python script to display or notify a 
-user by email and/or via Telegram about the status of the domain and the 
-expiration date.
+        A simple python script to display or notify a user by email and/or via Telegram
+        about the status of the domain and the expiration date.
+
+        DNS Domain Expiration Checker
 
 Options:
--h, --help            Help
--v, --version         Display the version number
--f FILE, --file FILE  Path to the file with the list of domains (default is None)
--d STRING, --domain STRING
+  -h, --help            Help
+  -v, --version         Display the version number
+  -f FILE, --file FILE  Path to the file with the list of domains (default is None)
+  -d STRING, --domain STRING
                         Domain to check expiration on (default is None)
--c, --print-to-console
+  -c, --print-to-console
                         Enable console printing (default is False)
--l, --long-format     Enable detailed print in console (default is False)
--i SECONDS, --interval-time SECONDS
+  -l, --long-format     Enable detailed print in console (default is False)
+  -i SECONDS, --interval-time SECONDS
                         Time to sleep between whois queries (in seconds, default is 60)
--x DAYS, --expire-days DAYS
+  -x DAYS, --expire-days DAYS
                         Expiration threshold to check against (in days, default is 60)
--s FLOAT, --cost-per-domain FLOAT
+  -s FLOAT, --cost-per-domain FLOAT
                         The cost per one domain (in your currency, default is 0.00)
--t, --use-telegram    Send a warning message through the Telegram (default is False)
--p URL, --proxy URL   Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None)
--e EMAIL, --email-to EMAIL
+  -twtc, --track-whois-text-changes
+                        Enable whois text change monitoring (default is False)
+  -t, --use-telegram    Send a warning message through the Telegram (default is False)
+  -p URL, --proxy URL   Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None)
+  -e EMAIL, --email-to EMAIL
                         Send a warning message to email address (default is None)
--subject STRING, --email-subject STRING
+  -subject STRING, --email-subject STRING
                         Append custom text to the email subject (default is None)
--ssl, --email-ssl     Send email via SSL (default is False)
--auth, --email-auth   Send email via authenticated SMTP (default is False)
--starttls, --email-starttls
+  -ssl, --email-ssl     Send email via SSL (default is False)
+  -auth, --email-auth   Send email via authenticated SMTP (default is False)
+  -starttls, --email-starttls
                         Send email via STARTTLS (default is False)
--oe, --use-only-external-whois
+  -oe, --use-only-external-whois
                         Use only external utility whois (default is False)
--ee, --use-extra-external-whois
+  -ee, --use-extra-external-whois
                         Use external whois utility for additional analysis (default is False)
--nb, --no-banner      Do not print banner (default is False)
+  -nb, --no-banner      Do not print banner (default is False)
+
+© AK545 (Andrey Klimov) 2019..2022, e-mail: ak545 at mail dot ru
 ```
 
 ### Описание опций
@@ -133,7 +150,7 @@ Options:
 
 #### Формат файла со списком доменов
 ```bash
-    domain [%days%] [sleep:%seconds%] [cost:%cost%]
+    domain [%days%] [sleep:%seconds%] [cost:%cost%] [skip_checking_whois_text_changes]
     domain [sleep:%seconds%] [%days%]
     domain [%days%]
     domain [sleep:%seconds%]
@@ -149,6 +166,8 @@ Options:
 
 **%cost%** - Число, обозначающее стоимость продления домена. Ключевое слово "**cost:**" не менять. Пробелы между этим ключевым словом и стоимостью не допускаются.
 
+**skip_checking_whois_text_changes** - Ключевое слово для игнорирования возможной проверки на изменения текста whois.
+
 Файл должен быть в кодировке **UTF-8 без ВОМ**, формат новой строки: **Unix (0Ah)**
 
 #### Пример файла со списком доменов
@@ -158,17 +177,15 @@ Options:
 # Пример файла со списком доменов
 # Допускается:
 # - пустые строки
-# - строка - комментарий
-# (строка должна начинаться с символа "#")
-# - строка - название заголовка группы
-# (строка должна начинаться с символа "!")
+# - строка - комментарий (строка должна начинаться с символа "#")
+# - строка - название заголовка группы (строка должна начинаться с символа "!")
 #
 # Формат задания строки домена:
 # - имя домена (обязательно первым)
 # - значение истечения срока в днях (целое число)
-# - значение интервала в секундах перед тем
-# как перейти к следующей проверке (sleep:целое число)
+# - значение интервала в секундах перед тем как перейти к следующей проверке (sleep:целое число)
 # - стоимость продления домена (cost:float)
+# - пропустить проверку изменений текста whois для этого домена (skip_checking_whois_text_changes)
 #
 # Например:
 # ! Группа 1
@@ -176,18 +193,15 @@ Options:
 # имя_домена число
 #
 # ! Группа 2
-# имя_домена число sleep:число cost:float
+# имя_домена число sleep:число cost:float skip_checking_whois_text_changes
 # имя_домена sleep:число число 
 # имя_домена sleep:число
 #
 # Если значение истечения срока в днях не задано,
-# используется значение по-умолчанию или из параметра
-# командной строки
+# используется значение по-умолчанию или из параметра командной строки
 #
-# Если значение интервала в секундах перед тем как
-# перейти к следующей проверке не задано,
-# используется значение по-умолчанию или из параметра
-# командной строки
+# Если значение интервала в секундах перед тем как перейти к следующей проверке не задано,
+# используется значение по-умолчанию или из параметра командной строки
 #
 # Если значение стоимости продления домена не задано,
 # используется значение по-умолчанию или из параметра
@@ -208,7 +222,7 @@ abc.xyz
 codepen.io
 habr.com
 freepascal.org
-mikrotik.com
+mikrotik.com skip_checking_whois_text_changes
 git-scm.com
 github.com
 python.org
@@ -250,6 +264,11 @@ youtube.com
 
 Стоимость продления домена (по умолчанию 0.00)
 
+**-twtc, --track-whois-text-changes**
+
+Включить мониторинг изменений текста whois (по умолчанию False)
+
+Если в файле со списком доменов для какого-то домена указано ключевое слово **skip_checking_whois_text_changes**, то для такого домена проверка на изменения текста whois будет проигнорирована.
 
 **-t, --use-telegram**
 
@@ -307,13 +326,13 @@ $ sudo apt update && sudo apt upgrade
 $ sudo apt install whois
 ```
 
-Для RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x:
+Для устаревших RPM-Based дистрибутивов Linux (RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x):
 
 ```console
 $ sudo yum install jwhois
 ```
 
-Для RHEL 8.x/CentOS 8.x/Fedora 22 и выше:
+Для более новых RPM-Based дистрибутивов Linux (RHEL 8.x/CentOS 8.x/Fedora 22 и выше/Rocky Linux/Alma Linux):
 
 ```console
 $ sudo dnf install jwhois
@@ -330,6 +349,7 @@ $ sudo pacman -S whois
 ```console
 $ brew install whois
 ```
+Примечание: [brew](https://brew.sh/index_ru)
 
 
 Для ОС Microsoft Windows лучше всего использовать форк **whois** из пакета **cygwin**. 
@@ -340,13 +360,13 @@ $ brew install whois
 
 Примечание: используйте **CMD.exe**, не используйте *Powershell* (для него команда совсем другая)! 
 
-Выполните команду (*смотрите ниже*; в Windows 7/8/8.1/10 **переменные среды** можно изменять через графический интерфейс пользователя):
+Выполните команду (*смотрите ниже*; в Windows 7/8/8.1/10/11 **переменные среды** можно изменять через графический интерфейс пользователя):
 
 ```console
 > setx /M PATH "c:\cygwin64\bin;%PATH%"
 ```
 
-Обратите внимание! Для полноценной работы утилиты **whois** из состава пакета **cygwin** требуются файлы:
+Обратите внимание! Для полноценной работы утилиты **whois** из состава пакета **cygwin** требуются файлы (в этом репозитории они находятся в папке **/cygwin64/bin/**. Примите к сведению, что это версии для 64 битной операционной системы MS Windows.):
 
     whois.exe
     cygiconv-2.dll
@@ -366,7 +386,9 @@ $ brew install whois
 
 ```python
     SMTP_SERVER = os.getenv("SMTP_SERVER", "localhost")
-    # SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")    
+    # SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    # SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.mail.ru')
+    # SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.yandex.ru')
 ```
 
 **SMTP_PORT**
@@ -376,9 +398,9 @@ SMTP порт
 Примеры:
     
 ```python
-    # SMTP_PORT = int(os.getenv("SMTP_PORT", 587))  # Для starttls
-    # SMTP_PORT = int(os.getenv("SMTP_PORT", 465))  # Для SSL
-    SMTP_PORT = int(os.getenv("SMTP_PORT", 25))   # По умолчанию
+    # SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))  # Для starttls
+    # SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))  # Для SSL
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "25"))   # По умолчанию
 ```
 
 **SMTP_SENDER**
@@ -447,6 +469,7 @@ Telegram API URL
     WHOIS_COMMAND = "whois"
     # WHOIS_COMMAND = "/usr/bin/whois"
     # WHOIS_COMMAND = "c:\\cygwin64\\bin\\whois.exe"
+    # WHOIS_COMMAND = r"c:\cygwin64\bin\whois.exe"
 ```
 
 Примечание: Не используйте для ОС Microsoft Windows аналогичную утилиту whois от автора Марка Руссиновича.
@@ -470,7 +493,11 @@ Telegram API URL
 Примеры:
 
 ```python
-    G_CURRENCY_SYMBOL = '₽'
+    # G_CURRENCY_SYMBOL = '$'
+    # G_CURRENCY_SYMBOL = '¥'
+    # G_CURRENCY_SYMBOL = '£'
+    # G_CURRENCY_SYMBOL = '€'
+    G_CURRENCY_SYMBOL = '₽'    
 ```
 
 ### Параметры оценки времени до окончания сроков регисрации домена
@@ -589,11 +616,19 @@ $ crontab -u user -r
 
 `> schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
 
-## Спасибо за идею
+## Спасибо
 Автору оригинального скрипта: Matty < matty91 at gmail dot com > [https://github.com/Matty9191](https://github.com/Matty9191)
+
+Отдельные благодарности за различные предложения и замечания:
+- [Carl Mercier](https://github.com/cmer)
+- [Leif](https://github.com/akhepcat)
+- [woodholly](https://github.com/woodholly)
+
 
 ## Лицензия
 [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/)
+
+Почему именно такая я и сам не знаю
 
 ## Ограничения
 Я, автор этого python-скрипта, написал этот скрипт исключительно для своих нужд. Никаких гарантий не предоставляется. Вы можете использовать этот скрипт свободно, без каких либо отчислений, в любых целях, кроме [Киберсквоттинга](https://ru.wikipedia.org/wiki/Киберсквоттинг).
@@ -601,9 +636,18 @@ $ crontab -u user -r
 Вы можете вносить любые правки в код скрипта и делать форк этого скрипта при условии указания ссылки на меня и на [Matty](https://github.com/Matty9191), как источника вашего вдохновения.
 
 ## Постскриптум
-- Работа скрипта проверялась в Microsoft Windows 10, Linux Fedora 29/30/31/32/33, Linux Ubuntu Desktop 18.04/20.04/20.10, Linux CentOS 6/7/8, Linux Manjaro 18.0.2/20.2.
-- Программный код скррипта не идеален. Но прошу простить меня за это. На момент написания этого скрипта, Python я изучаю всего две недели. Мне нравится этот язык программирования, он намного проще и вместе с тем мощнее, чем другие языки программирования, которыми я владею. 
-- Все рекомендации данные мной для Apple macOS могут содержать в себе неточности. Простите, у меня нет под рукой Apple macBook (но вдруг, кто-то подарит мне его?).
+- Работа скрипта проверялась в Microsoft Windows 10/11, Linux Fedora 29/30/31/32/33/34/35/36, Linux Debian 9/10/11, Linux Ubuntu Desktop 18.04/20.04/20.10/22.04, Linux CentOS 6/7/8, Rocky Linux 8.6/9.0, Linux Manjaro 18.0.2/20.2/21.3.3, Apple macOS 12.4 Monterey на MacBook Pro M1.
+
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+![Fedora](https://img.shields.io/badge/Fedora-294172?style=for-the-badge&logo=fedora&logoColor=white)
+![Debian](https://img.shields.io/badge/Debian-D70A53?style=for-the-badge&logo=debian&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
+![Cent OS](https://img.shields.io/badge/cent%20os-002260?style=for-the-badge&logo=centos&logoColor=F0F0F0)
+![Rocky Linux](https://img.shields.io/badge/-Rocky%20Linux-%2310B981?style=for-the-badge&logo=rockylinux&logoColor=white)
+![Manjaro](https://img.shields.io/badge/Manjaro-35BF5C?style=for-the-badge&logo=Manjaro&logoColor=white)
+![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
+
+- Программный код скррипта не идеален. Но прошу простить меня за это.
 - Да здравствует E = mc&sup2; !
 - Желаю всем удачи!
 
@@ -617,3 +661,4 @@ $ crontab -u user -r
 ---
 
 > Best regards, ak545 ( ru.mail&copy;ak545&sup2; )
+

@@ -1,4 +1,6 @@
 # DNS Domain Expiration Checker from ak545
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+
 **ddec.py** - This is a python script to check the expiration dates for the registration of your domains.
 
 This script develops the idea of another [DNS Domain Expiration Checker](https://github.com/Matty9191/dns-domain-expiration-checker), Author: Matty < matty91 at gmail dot com >
@@ -7,11 +9,22 @@ This script develops the idea of another [DNS Domain Expiration Checker](https:/
 ![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/script.png)
 > Script in working
 
+<details>
+<summary>More</summary>
+
+![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/script2.png)
+> Script in working
+
 ![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/email.png)
+> A sample of the email
+
+![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/email2.png)
 > A sample of the email
 
 ![](https://github.com/ak545/dns-domain-expiration-checker/raw/master/images/telegram.png)
 > A sample of the Telegram message
+
+</details>
 
 ## Description
 If you are here, it is possible that your domain has expired and you have coped with the troubles associated with its restoration. It's not fun, right? To prevent you from getting into a similar situation again, you can install and run **ddec.py** to monitor your domain names. If you add this script to the task scheduler (for example, to cron, if you have Linux or to Task Scheduler, if you have Windows), then it will monitor the timeliness of updating domain names. If the deadline for the registration of your domain names is coming soon, the script will inform you in time about this (either by email or by Telegram or directly in the console). If you own several domain names served by different registrars, this script will also help to standardize all notifications about the expiration of the registration of domain names.
@@ -34,7 +47,7 @@ $ xcode-select --install
 
 Install brew:
 ```console
-$ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
 Install Python:
@@ -75,44 +88,47 @@ Depending on your Pyton environment, your actions will be slightly different, fo
 ## Usage
 ```console
 $ ddec.py -h
-usage: ddec.py [-h] [-v] [-f FILE] [-d STRING] [-c] [-l] [-i SECONDS]
-[-x DAYS] [-s FLOAT] [-t] [-p URL] [-e EMAIL] [-subject STRING] [-ssl]
-[-auth] [-starttls] [-oe] [-ee] [-nb]
+usage:  ddec.py [Options]
 
-DNS Domain Expiration Checker A simple python script to display or notify a 
-user by email and/or via Telegram about the status of the domain and the 
-expiration date.
+        A simple python script to display or notify a user by email and/or via Telegram
+        about the status of the domain and the expiration date.
+
+        DNS Domain Expiration Checker
 
 Options:
--h, --help            Help
--v, --version         Display the version number
--f FILE, --file FILE  Path to the file with the list of domains (default is None)
--d STRING, --domain STRING
+  -h, --help            Help
+  -v, --version         Display the version number
+  -f FILE, --file FILE  Path to the file with the list of domains (default is None)
+  -d STRING, --domain STRING
                         Domain to check expiration on (default is None)
--c, --print-to-console
+  -c, --print-to-console
                         Enable console printing (default is False)
--l, --long-format     Enable detailed print in console (default is False)
--i SECONDS, --interval-time SECONDS
+  -l, --long-format     Enable detailed print in console (default is False)
+  -i SECONDS, --interval-time SECONDS
                         Time to sleep between whois queries (in seconds, default is 60)
--x DAYS, --expire-days DAYS
+  -x DAYS, --expire-days DAYS
                         Expiration threshold to check against (in days, default is 60)
--s FLOAT, --cost-per-domain FLOAT
+  -s FLOAT, --cost-per-domain FLOAT
                         The cost per one domain (in your currency, default is 0.00)
--t, --use-telegram    Send a warning message through the Telegram (default is False)
--p URL, --proxy URL   Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None)
--e EMAIL, --email-to EMAIL
+  -twtc, --track-whois-text-changes
+                        Enable whois text change monitoring (default is False)
+  -t, --use-telegram    Send a warning message through the Telegram (default is False)
+  -p URL, --proxy URL   Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None)
+  -e EMAIL, --email-to EMAIL
                         Send a warning message to email address (default is None)
--subject STRING, --email-subject STRING
+  -subject STRING, --email-subject STRING
                         Append custom text to the email subject (default is None)
--ssl, --email-ssl     Send email via SSL (default is False)
--auth, --email-auth   Send email via authenticated SMTP (default is False)
--starttls, --email-starttls
+  -ssl, --email-ssl     Send email via SSL (default is False)
+  -auth, --email-auth   Send email via authenticated SMTP (default is False)
+  -starttls, --email-starttls
                         Send email via STARTTLS (default is False)
--oe, --use-only-external-whois
+  -oe, --use-only-external-whois
                         Use only external utility whois (default is False)
--ee, --use-extra-external-whois
+  -ee, --use-extra-external-whois
                         Use external whois utility for additional analysis (default is False)
--nb, --no-banner      Do not print banner (default is False)
+  -nb, --no-banner      Do not print banner (default is False)
+
+© AK545 (Andrey Klimov) 2019..2022, e-mail: ak545 at mail dot ru
 ```
 
 ### Description of options
@@ -130,7 +146,7 @@ Path to the file with the list of domains (default is None)
 
 #### File format with a list of domains
 ```bash
-    domain [%days%] [sleep:%seconds%] [cost:%cost%]
+    domain [%days%] [sleep:%seconds%] [cost:%cost%] [skip_checking_whois_text_changes]
     domain [sleep:%seconds%] [%days%]
     domain [%days%]
     domain [sleep:%seconds%]
@@ -146,6 +162,9 @@ Path to the file with the list of domains (default is None)
 
 **%cost%** - The number that represents the cost of renewing a domain. The keyword "**cost:**" does not change. Spaces between this keyword and cost are not allowed.
 
+**skip_checking_whois_text_changes** - Keyword to ignore possible whois text change checks.
+
+
 The file must be encoded in **UTF-8 without BOM**, the format of the new line: **Unix (0Ah)**
 
 
@@ -156,17 +175,15 @@ The file must be encoded in **UTF-8 without BOM**, the format of the new line: *
 # Example file with the list of domains
 # Allowed:
 # - blank lines
-# - string as comment
-# (the string must begin with the character "#")
-# - string as the name of the group header
-# (the string must begin with the character "!")
+# - string as comment (the string must begin with the character "#")
+# - string as the name of the group header (the string must begin with the character "!")
 #
 # The format for setting the domain string is:
 # - domain name (required first)
 # - expiration value in days (integer)
-# - interval value in seconds before proceeding to
-# the next check (sleep:integer)
+# - interval value in seconds before proceeding to the next check (sleep:integer)
 # - the cost of renewing a domain (cost:float)
+# - skip checking whois text changes for this domain (skip_checking_whois_text_changes)
 #
 # For example:
 # ! Group 1
@@ -174,18 +191,15 @@ The file must be encoded in **UTF-8 without BOM**, the format of the new line: *
 # domain_name integer
 #
 # ! Group 2
-# domain_name integer sleep:integer cost:float
+# domain_name integer sleep:integer cost:float skip_checking_whois_text_changes
 # domain_name sleep:integer integer
 # domain_name sleep:integer
 #
 # If the expiration value in days is not specified,
-# the default value is used or from the command
-# line parameter
+# the default value is used or from the command line parameter
 #
-# If the interval value in seconds is not specified
-# before moving on to the next check,
-# the default value or from the command line parameter
-# is used.
+# If the interval value in seconds is not specified before moving on to the next check,
+# the default value or from the command line parameter is used.
 #
 # If the cost of renewing a domain is not specified,
 # the default value is used or from the command
@@ -206,7 +220,7 @@ abc.xyz
 codepen.io
 habr.com
 freepascal.org
-mikrotik.com
+mikrotik.com skip_checking_whois_text_changes
 git-scm.com
 github.com
 python.org
@@ -247,6 +261,12 @@ How many days before the expiration of the domain registration start to warn.
 **-s FLOAT, --cost-per-domain FLOAT**
 
 The cost of renewing a domain (default is 0.00)
+
+**-twtc, --track-whois-text-changes**
+
+Enable whois text change monitoring (default is False)
+
+If the **skip_checking_whois_text_changes** keyword is specified in a file with a list of domains for a domain, then the check for whois text changes for that domain will be ignored.
 
 **-t, --use-telegram**
 
@@ -304,12 +324,12 @@ $ sudo apt update && sudo apt upgrade
 $ sudo apt install whois
 ```
 
-For RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x:
+For legacy RPM-Based Linux distributions (RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x)
 ```console
 $ sudo yum install jwhois
 ```
 
-For RHEL 8.x/CentOS 8.x/Fedora 22 and higher:
+For newer RPM-Based Linux distributions (RHEL 8.x/CentOS 8.x/Fedora 22 and higher/Rocky Linux/Alma Linux):
 ```console
 $ sudo dnf install jwhois
 ```
@@ -323,6 +343,7 @@ For Apple macOS:
 ```console
 $ brew install whois
 ```
+Note: [brew](https://brew.sh/)
 
 For OS Microsoft Windows, it is best to use **cygwin** forks **whois**.
 
@@ -333,11 +354,11 @@ After installing **cygwin**, open a command prompt with administrator privileges
 
 Note: use **CMD.exe**, do not use *Powershell* (for it the command is completely different)!
 
-Run the command (*see below*; in Windows 7/8/8.1/10 **environment variables** can be changed via the graphical user interface):
+Run the command (*see below*; in Windows 7/8/8.1/10/11 **environment variables** can be changed via the graphical user interface):
 ```console
 > setx /M PATH "c:\cygwin64\bin;%PATH%"
 ```
-Note! For the full work of the utility **whois** from the package **cygwin** files are required:
+Note! For the full work of the utility **whois** from the package **cygwin** files are required (in this repository they are in the **/cygwin64/bin/** folder. Please note that these are versions for 64-bit MS Windows operating system.):
 
     whois.exe
     cygiconv-2.dll
@@ -361,6 +382,8 @@ Samples:
 ```python
     SMTP_SERVER = os.getenv("SMTP_SERVER", "localhost")
     # SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    # SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.mail.ru')
+    # SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.yandex.ru')
 ```
 
 **SMTP_PORT**
@@ -370,9 +393,9 @@ SMTP port
 Samples:
 
 ```python
-    # SMTP_PORT = int(os.getenv("SMTP_PORT", 587))  # For starttls
-    # SMTP_PORT = int(os.getenv("SMTP_PORT", 465))  # For SSL
-    SMTP_PORT = int(os.getenv("SMTP_PORT", 25))   # Default
+    # SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))  # For starttls
+    # SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))  # For SSL
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "25"))   # Default
 ```
 
 **SMTP_SENDER**
@@ -441,6 +464,7 @@ Samples:
     WHOIS_COMMAND = "whois"
     # WHOIS_COMMAND = "/usr/bin/whois"
     # WHOIS_COMMAND = "c:\\cygwin64\\bin\\whois.exe"
+    # WHOIS_COMMAND = r"c:\cygwin64\bin\whois.exe"
 ```
 
 Note: Do not use the similar whois utility from author Mark Russinovich for Microsoft Windows.
@@ -464,6 +488,10 @@ Samples:
 
 ```python
     G_CURRENCY_SYMBOL = '$'
+    # G_CURRENCY_SYMBOL = '¥'
+    # G_CURRENCY_SYMBOL = '£'
+    # G_CURRENCY_SYMBOL = '€'
+    # G_CURRENCY_SYMBOL = '₽'
 ```
 
 ### Parameters for estimating the time until the expiration of domain registration
@@ -574,8 +602,13 @@ Ask for help to [documentation](https://docs.microsoft.com/en-us/windows/desktop
 
 `> schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
 
-## Thanks for the idea
+## Thanks
 To the author of the original script: Matty < matty91 at gmail dot com > [https://github.com/Matty9191](https://github.com/Matty9191)
+
+Special thanks for various suggestions and comments:
+- [Carl Mercier](https://github.com/cmer)
+- [Leif](https://github.com/akhepcat)
+- [woodholly](https://github.com/woodholly)
 
 ## License
 [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/)
@@ -586,10 +619,19 @@ I, the author of this python script, wrote this script exclusively for my needs.
 You can make any changes to the script code and fork this script, provided that the link to me and [Matty](https://github.com/Matty9191) is indicated as a source of your inspiration.
 
 ## Postscriptum
-- The script was tested in Microsoft Windows 10, Linux Fedora 29/30/31/32/33, Linux Ubuntu Desktop 18.04/20.04/20.10, Linux CentOS 6/7/8, Linux Manjaro 18.0.2/20.2.
-- Sorry for my bad English.
-- The program code of the script is not perfect. But please forgive me for that. At the time of writing this Python script, I have been studying for only two weeks. I like this programming language, it is much simpler and at the same time more powerful than other programming languages that I own.
-- All recommendations given by me for Apple macOS may contain inaccuracies. Sorry, I don’t have an Apple macBook on hand (but what if someone gives it to me?).
+- The script was tested in Microsoft Windows 10/11, Linux Fedora 29/30/31/32/33/34/35/36, Linux Debian 9/10/11, Linux Ubuntu Desktop 18.04/20.04/20.10/22.04, Linux CentOS 6/7/8, Rocky Linux 8.6/9.0, Linux Manjaro 18.0.2/20.2/21.3.3, Apple macOS 12.4 Monterey on MacBook Pro M1.
+
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+![Fedora](https://img.shields.io/badge/Fedora-294172?style=for-the-badge&logo=fedora&logoColor=white)
+![Debian](https://img.shields.io/badge/Debian-D70A53?style=for-the-badge&logo=debian&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
+![Cent OS](https://img.shields.io/badge/cent%20os-002260?style=for-the-badge&logo=centos&logoColor=F0F0F0)
+![Rocky Linux](https://img.shields.io/badge/-Rocky%20Linux-%2310B981?style=for-the-badge&logo=rockylinux&logoColor=white)
+![Manjaro](https://img.shields.io/badge/Manjaro-35BF5C?style=for-the-badge&logo=Manjaro&logoColor=white)
+![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
+
+- Sorry for my bad English. And on the other hand, which of you can boast of knowing the great and mighty Russian language? Have any of you read Pushkin, Tolstoy, Dostoyevsky, Gogol, Bulgakov in the original...? It's a joke.
+- The program code of the script is not perfect. But please forgive me for that.
 - Glory to the E = mc &sup2; !
 - I wish you all good luck!
 
