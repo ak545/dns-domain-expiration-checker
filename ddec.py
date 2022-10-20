@@ -15,9 +15,9 @@
 # Leif (https://github.com/akhepcat)
 # woodholly (https://github.com/woodholly)
 #
-# Current Version: 0.2.12
+# Current Version: 0.2.15
 # Creation Date: 2019-07-05
-# Date of last changes: 2022-07-17
+# Date of last changes: 2022-10-20
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -85,7 +85,7 @@ if sys.version_info < (3, 6):
     sys.exit(-1)
 
 # Global constants
-__version__: str = '0.2.12'
+__version__: str = '0.2.15'
 
 FR: str = Fore.RESET
 
@@ -222,6 +222,7 @@ NOT_FOUND_STRINGS: Tuple = (
 UNSUPPORTED_DOMAINS: Tuple = (
     '.gov',
     'denic.de',
+    '.eu',
 )
 
 # Command for external whois
@@ -379,9 +380,9 @@ def compare_whois_text(f1: str, f2: str) -> str:
     f1_list_fixed: List = []
     f2_list_fixed: List = []
     for line in f1_list:
-        f1_list_fixed.append(f'{line.strip()}\n')
+        f1_list_fixed.append(f'{line.lower().strip()}\n')
     for line in f2_list:
-        f2_list_fixed.append(f'{line.strip()}\n')
+        f2_list_fixed.append(f'{line.lower().strip()}\n')
     diff: Optional[Any] = difflib.ndiff(f1_list_fixed, f2_list_fixed)
     delta: str = ''
     is_found: bool = False
@@ -537,6 +538,8 @@ def parse_whois_data(domain: str, whois_data: str) -> Tuple:
     registrar = None
     whois_server = None
     ret_error = None
+
+    print(f'{whois_data}')
 
     if 'No entries found for the selected source(s)' in whois_data:
         # It is Free!
@@ -1526,7 +1529,7 @@ def print_domain(domain: str,
             '\tavailable at the DENIC website:\n'
             '\thttp://www.denic.de/en/domains/whois-service/web-whois.html\n'
         )
-    if error == 23:
+    elif error == 23:
         # *.nz
         print(
             f'\tAdditional information may be available at '
