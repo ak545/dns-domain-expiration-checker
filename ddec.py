@@ -539,8 +539,6 @@ def parse_whois_data(domain: str, whois_data: str) -> Tuple:
     whois_server = None
     ret_error = None
 
-    print(f'{whois_data}')
-
     if 'No entries found for the selected source(s)' in whois_data:
         # It is Free!
         ret_error = 11
