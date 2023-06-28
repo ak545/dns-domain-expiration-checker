@@ -15,9 +15,9 @@
 # Leif (https://github.com/akhepcat)
 # woodholly (https://github.com/woodholly)
 #
-# Current Version: 0.2.15
+# Current Version: 0.2.17
 # Creation Date: 2019-07-05
-# Date of last changes: 2022-10-20
+# Date of last changes: 2023-06-29
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -31,7 +31,7 @@
 #  GNU General Public License for more details.
 
 from __future__ import unicode_literals
-from typing import List, Dict, Tuple, Union, Optional, Sequence, Callable, Type, Any
+from typing import List, Dict, Tuple, Optional, Any
 import os
 import sys
 import platform
@@ -85,7 +85,7 @@ if sys.version_info < (3, 6):
     sys.exit(-1)
 
 # Global constants
-__version__: str = '0.2.15'
+__version__: str = '0.2.17'
 
 FR: str = Fore.RESET
 
@@ -176,45 +176,43 @@ REQUEST_HEADERS: Dict = {
 # Options for an external utility whois
 # Keywords for whois-data
 EXPIRE_STRINGS: Tuple = (
-    'Registry Expiry Date:',
-    'Expiration:',
-    'Domain Expiration Date:',
-    'Registrar Registration Expiration Date:',
+    'registry expiry date:',
+    'expiration:',
+    'domain expiration date:',
+    'registrar registration expiration date:',
     'expire:',
+    'expires:',
     'paid-till:',
     'option expiration date:',
-    '[Expires on]',
-    'Expiry date:',
-    'Expiry Date:',
-    'Expiration date:',
-    'Expiration Date:',
-    'Expiration Time:',
-    'Renewal date:',
-    'paid-till:',
-    'Domain expires:',
+    '[expires on]',
+    'expiry date:',
+    'expiration date:',
+    'expiration time:',
     'renewal date:',
-    'expires:',
-    'Expires:',
-    'Expires On:',
+    'paid-till:',
+    'domain expires:',
+    'expires on:',
+    'expires    on:',
+    'valid until:',
+    'registry expiry date:',
+    '[有効期限]',
 )
 REGISTRAR_STRINGS: Tuple = (
-    '[Registrant]',
-    'Registrar:',
+    '[registrant]',
     'registrar:',
-    'Registrant:',
-    # 'Status:',
-    'Sponsoring Registrar:',
-    'REGISTRAR:',
+    'registrant:',
+    # 'status:',
+    'sponsoring registrar:',
 )
 WHOIS_SERVER_STRINGS: Tuple = (
-    'Registrar WHOIS Server:',
-    'WHOIS Server:',
+    'registrar whois server:',
+    'whois server:',
 )
 NOT_FOUND_STRINGS: Tuple = (
-    'NOT FOUND',
-    'No match for domain',
-    'Not Currently Eligible For Renewal',
-    'No entries found for the selected source(s).',
+    'not found',
+    'no match for domain',
+    'not currently eligible for renewal',
+    'no entries found for the selected source(s).',
 )
 
 # Unsupported domains (all lowercase !!!)
@@ -223,10 +221,16 @@ UNSUPPORTED_DOMAINS: Tuple = (
     '.gov',
     'denic.de',
     '.eu',
+    '.au',
 )
 
 # Command for external whois
-WHOIS_COMMAND: str = 'whois'
+if sys.platform == 'win32':
+    WHOIS_COMMAND: str = f'{pathname}{SEP}winbin{SEP}whois-cygwin64{SEP}whois.exe'
+    # WHOIS_COMMAND: str = f'{pathname}{SEP}winbin{SEP}whois-sysinternals{SEP}whois64.exe'
+    # WHOIS_COMMAND: str = f'{pathname}{SEP}winbin{SEP}whois-nir-sofer{SEP}WhoisCL.exe'
+else:
+    WHOIS_COMMAND: str = 'whois'
 
 # Timeout for external whois
 WHOIS_COMMAND_TIMEOUT: int = 10
@@ -368,11 +372,12 @@ def load_whois_cache(file: str) -> Optional[Dict]:
     return json_data
 
 
-def compare_whois_text(f1: str, f2: str) -> str:
+def compare_whois_text(f1: str, f2: str, domain: str = None) -> str:
     """
     Compare two whois text
     :param f1: str
     :param f2: str
+    :param domain: str
     :return: str
     """
     f1_list: List = f1.splitlines(keepends=True)
@@ -384,6 +389,18 @@ def compare_whois_text(f1: str, f2: str) -> str:
     for line in f2_list:
         f2_list_fixed.append(f'{line.lower().strip()}\n')
     diff: Optional[Any] = difflib.ndiff(f1_list_fixed, f2_list_fixed)
+
+    # TODO: For future functionality
+    # diff_html = difflib.HtmlDiff(tabsize=2)
+    # with open(f'{domain}.html', 'w', encoding='utf-8') as fp:
+    #     html = diff_html.make_file(
+    #         fromlines=f1_list_fixed,
+    #         tolines=f2_list_fixed,
+    #         fromdesc='Original',
+    #         todesc='Modified',
+    #     )
+    #     fp.write(html)
+
     delta: str = ''
     is_found: bool = False
     for x in diff:
@@ -417,6 +434,8 @@ def whois_check() -> None:
     External whois availability check
     :return: None
     """
+    global WHOIS_COMMAND
+
     str_tmp: str = ""
     whois_found: bool = False
     if sys.platform == 'win32':
@@ -430,25 +449,27 @@ def whois_check() -> None:
         str_tmp = item
         if str_tmp != '':
             if str_tmp[-1] != SEP:
-                str_tmp += SEP + 'whois'
-                if sys.platform == 'win32':
-                    str_tmp += '.exe'
+                str_tmp += SEP
+            str_tmp += 'whois'
+            if sys.platform == 'win32':
+                str_tmp += '.exe'
             if Path(str_tmp).is_file():
                 whois_found = True
                 break
     if whois_found:
+        WHOIS_COMMAND = str_tmp
         if not CLI.no_banner:
             print(
-                f'\tThe {FLG}whois{FR} found in: {FLW}{str_tmp}'
+                f'\tThe {FLG}whois{FR} found in: {FC}{str_tmp}'
             )
     else:
         print(f'\tThe {FLR}whois{FR} not found!')
         if sys.platform == 'win32':
             print(
-                '\tPlease, install the cygwin from '
-                'https://www.cygwin.com/ to c:\\cygwin64 (as sample)\n'
-                '\tChoice in installer whois and install it.\n'
-                '\tAfter it, add path to c:\\cygwin64\\bin to system PATH variable.\n'
+                f'\tPlease, install the cygwin from '
+                f'https://www.cygwin.com/ to c:\\cygwin64 (as sample)\n'
+                f'\tChoice in installer whois and install it.\n'
+                f'\tAfter it, add path to c:\\cygwin64\\bin to system PATH variable.\n'
             )
         elif sys.platform == 'linux':
             print(
@@ -493,18 +514,29 @@ def make_whois_query(domain: str) -> Tuple:
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     except Exception as e:
         print(
-            f'{FLR}Unable to Popen() the whois binary.\nDomain: {domain}.\nException: {e}')
+            f'{FLR}Unable to Popen() the whois binary.\n'
+            f'Domain: {domain}.\n'
+            f'Exception: {e}')
         sys.exit(-1)
 
     try:
         whois_data = p.communicate(timeout=WHOIS_COMMAND_TIMEOUT)[0]
-    except Exception:
+    except Exception as e:
+        whois_data = str(e)
+
         if domain.lower() not in ERRORS_DOMAIN:
             G_DOMAINS_ERROR += 1
             ERRORS_DOMAIN.append(domain.lower())
-        return None, None, None, None, 1
 
-    # TODO: Work around whois issue #55 which returns a non-zero
+        if 'timed out after' in whois_data.lower():
+            return whois_data, None, None, None, 25
+        elif 'failed to retrieve the whois record' in whois_data.lower():
+            return whois_data, None, None, None, 26
+        else:
+            return None, None, None, None, 1
+
+    # TODO: For future functionality
+    # Work around whois issue #55 which returns a non-zero
     # exit code for valid domains.
     # if p.returncode != 0:
     #    print('The WHOIS utility exit()'ed with a non-zero return code')
@@ -539,22 +571,61 @@ def parse_whois_data(domain: str, whois_data: str) -> Tuple:
     whois_server = None
     ret_error = None
 
-    if 'No entries found for the selected source(s)' in whois_data:
+    tmp_whois_data = whois_data.lower()
+
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+    # Init colorama again
+    init(autoreset=True)
+
+    if 'connection timed out' in tmp_whois_data:
+        # Connection timed out
+        ret_error = 25
+        return raw_whois_data, None, None, None, ret_error
+
+    elif 'failed to retrieve the whois record' in tmp_whois_data:
+        # Failed to retrieve the WHOIS record of the specified domain
+        ret_error = 26
+        return raw_whois_data, None, None, None, ret_error
+
+    elif (
+            'no entries found for the selected source(s)' in tmp_whois_data
+    ) or (
+            'domain not found.' in tmp_whois_data
+    ) or (
+            'status: free' in tmp_whois_data
+    ) or (
+            f'no match for domain "{domain}"' in tmp_whois_data
+    ):
         # It is Free!
         ret_error = 11
         return raw_whois_data, None, None, None, ret_error
 
-    elif 'http://www.denic.de/en/domains/whois-service/web-whois.html' in whois_data:
+    elif 'http://www.denic.de/en/domains/whois-service/web-whois.html' in tmp_whois_data:
         # denic.de
         ret_error = 22
         return raw_whois_data, None, None, None, ret_error
 
-    elif 'https://www.dnc.org.nz/whois/search?domain_name=' in whois_data:
+    elif 'https://www.dnc.org.nz/whois/search?domain_name=' in tmp_whois_data:
         # *.nz
         ret_error = 23
         return raw_whois_data, None, None, None, ret_error
 
-    elif 'https://whois.dot.ph/' in whois_data:
+    elif 'https://dnc.org.nz/enquiry-form/' in tmp_whois_data:
+        # *.nz new version of this site
+        ret_error = 231
+        return raw_whois_data, None, None, None, ret_error
+
+    elif 'the registration of this domain is restricted' in tmp_whois_data:
+        # TODO: idiotic service where designated links don't exist
+        # the registration of this domain is restricted,
+        # as it is protected by the identity digital dpml brand protection policy.
+        # additional information can be found at
+        # https://www.identity.digital/what-we-do/brand-protection.
+        ret_error = 24
+        return raw_whois_data, None, None, None, ret_error
+
+    elif 'https://whois.dot.ph/' in tmp_whois_data:
         # whois.dot.ph
         try:
             page = requests.get(
@@ -566,33 +637,37 @@ def parse_whois_data(domain: str, whois_data: str) -> Tuple:
             print(f'{FLR}Failed to fetch remote blocklist providers. Continue...')
             return raw_whois_data, None, None, None, ret_error
 
-        html = page.content.decode('utf-8', 'ignore')
+        html = page.content.decode('utf-8', 'ignore').lower()
         raw_whois_data = html
-        if 'var expiryDate = moment(' in html:
+        if 'domain is available.' in html:
+            ret_error = 11
+            return raw_whois_data, None, None, None, ret_error
+
+        elif 'var expirydate = moment(' in html:
             for line in html.splitlines():
-                if 'var expiryDate = moment(' in line:
-                    if 'Registrar:' in line:
+                if 'var expirydate = moment(' in line:
+                    if 'registrar:' in line:
                         registrar = line.replace(
-                            'Registrar:', ''
+                            'registrar:', ''
                         ).replace(
                             '<br>', ''
                         )
 
                     str_date = line.replace(
-                        "var expiryDate = moment('", ""
+                        "var expirydate = moment('", ""
                     ).replace(
-                        "').format('YYYY-MM-DDTHH:mm:ss Z');", ""
+                        "').format('yyyy-mm-ddthh:mm:ss z');", ""
                     )
                     expiration_date = dateutil.parser.parse(
                         str_date, ignoretz=True)
 
     else:
-        raw_whois_data = whois_data
-        for line in whois_data.splitlines():
+        raw_whois_data = tmp_whois_data
+        for line in tmp_whois_data.splitlines():
             if line.strip() == '':
                 continue
 
-            if 'Your connection limit exceeded. Please slow down and try again later.' in line:
+            if 'your connection limit exceeded. please slow down and try again later.' in line:
                 # Interval is small
                 ret_error = 2
                 if domain not in ERRORS2_DOMAIN:
@@ -1317,7 +1392,8 @@ def print_namespase() -> None:
         f'\tUse internal whois       : {use_internal_whois}\n'
         f'\tUse only external whois  : {CLI.use_only_external_whois}\n'
         f'\tUse extra external whois : {CLI.use_extra_external_whois}\n'
-        f'\tPrint banner             : {CLI.no_banner}\n'
+        f'\tWhois command timeout    : {WHOIS_COMMAND_TIMEOUT}\n'
+        f'\tPrint banner             : {not CLI.no_banner}\n'
         f'\t-------------------------'
     )
 
@@ -1521,19 +1597,46 @@ def print_domain(domain: str,
     if error == 22:
         # denic.de
         print(
-            "\tThe DENIC whois service on port 43 doesn't disclose any information concerning\n"
-            '\tthe domain holder, general request and abuse contact.\n'
-            '\tThis information can be obtained through use of our web-based whois service\n'
-            '\tavailable at the DENIC website:\n'
-            '\thttp://www.denic.de/en/domains/whois-service/web-whois.html\n'
+            f"\t{FLBC}The DENIC whois service on port 43 doesn't disclose any information concerning\n"
+            f'\tthe domain holder, general request and abuse contact.\n'
+            f'\tThis information can be obtained through use of our web-based whois service\n'
+            f'\tavailable at the DENIC website:\n'
+            f'\thttp://www.denic.de/en/domains/whois-service/web-whois.html{FR}\n'
         )
     elif error == 23:
         # *.nz
+        # https://www.dnc.org.nz/whois/search?domain_name=stuff.co.nz
         print(
-            f'\tAdditional information may be available at '
+            f'\t{FLBC}Additional information may be available at '
             f'https://www.dnc.org.nz/whois/search?domain_name={FY}{domain}{FR}\n'
         )
 
+    elif error == 231:
+        # *.nz new version of this site
+        print(
+            f'\t{FLBC}Additional information may be available at '
+            f'https://dnc.org.nz/whois/whois-lookup/?domain_name={FY}{domain}{FR}\n'
+        )
+    elif error == 24:
+        # whois.afilias.net
+        print(
+            f'\t{FLBC}The registration of this domain is restricted,\n'
+            f'\tas it is protected by the identity digital dpml\n'
+            f'\tbrand protection policy.\n'
+            f'\tAdditional information can be found at\n'
+            f'\thttps://www.identity.digital/what-we-do/brand-protection\n'
+            f'\t(But most likely this page does not exist){FR}\n'
+        )
+    elif error == 25:
+        # whois Connection timed out
+        print(
+            f'\t{FLBC}Connection timed out{FR}\n'
+        )
+    elif error == 26:
+        # Failed to retrieve the WHOIS record of the specified domain
+        print(
+            f'\t{FLBC}Failed to retrieve the WHOIS record of the specified domain{FR}\n'
+        )
 
 def print_stat() -> None:
     """
@@ -1618,6 +1721,10 @@ def check_domain(domain_name: str,
             whois_server,
             ret_error
         ) = make_whois_query(domain_name)
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        # Init colorama again
+        init(autoreset=True)
     else:
         w: Optional[Any] = None
         sys.stdout = os.devnull
@@ -1764,7 +1871,7 @@ def check_domain(domain_name: str,
             if CLI.track_whois_text_changes:
                 if last_cache:
                     if last_cache.get('txt') != '':
-                        delta = compare_whois_text(last_cache.get('txt'), whois_data)
+                        delta = compare_whois_text(last_cache.get('txt'), whois_data, domain=domain_name.lower())
                         if delta != '':
                             delta_lines = delta.splitlines()
                             d_txt = ''
@@ -1933,7 +2040,12 @@ def check_cli_logic() -> None:
         print_namespase()
 
     if CLI.use_only_external_whois or CLI.use_extra_external_whois:
-        whois_check()
+        if not Path(WHOIS_COMMAND).is_file():
+            whois_check()
+        elif not CLI.no_banner:
+            print(
+                f'\tThe {FLG}whois{FR} found in: {FC}{WHOIS_COMMAND}'
+            )
 
     if CLI.use_only_external_whois and CLI.use_extra_external_whois:
         print(
@@ -2164,7 +2276,7 @@ def main() -> None:
 
         if CLI.use_telegram:
             res: Optional[Any] = make_report_for_telegram()
-            if res:
+            if res is not None:
                 if res.status_code != 200:
                     print(f'{FLR}{res.text}')
 
