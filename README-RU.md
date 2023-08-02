@@ -125,6 +125,10 @@ Options:
                         The cost per one domain (in your currency, default is 0.00)
   -twtc, --track-whois-text-changes
                         Enable whois text change monitoring (default is False)
+  -split, --split-long-message
+                        Split a long message for Telegram into many short parts (default is False)
+  -trim, --trim-long-whois-text
+                        Trim long whois text of changes for a domain for Telegram (default is False)
   -t, --use-telegram    Send a warning message through the Telegram (default is False)
   -p URL, --proxy URL   Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None)
   -e EMAIL, --email-to EMAIL
@@ -141,7 +145,7 @@ Options:
                         Use external whois utility for additional analysis (default is False)
   -nb, --no-banner      Do not print banner (default is False)
 
-© AK545 (Andrey Klimov) 2019..2022, e-mail: ak545 at mail dot ru
+© AK545 (Andrey Klimov) 2019..2023, e-mail: ak545 at mail dot ru
 ```
 
 ### Описание опций
@@ -278,6 +282,14 @@ youtube.com
 Включить мониторинг изменений текста whois (по умолчанию False)
 
 Если в файле со списком доменов для какого-то домена указано ключевое слово **skip_checking_whois_text_changes**, то для такого домена проверка на изменения текста whois будет проигнорирована.
+
+**-split, --split-long-message**
+
+Разбить длинное сообщение для Telegram на множество коротких частей (по умолчанию Нет)
+
+**-trim, --trim-long-text**
+
+Обрезать длинный whois-текст изменений домена для Telegram (по умолчанию Нет)
 
 **-t, --use-telegram**
 
@@ -595,11 +607,11 @@ $ VISUAL=mcedit crontab -u user -e
 
 В файле задач создайте примерно такую запись (не используйте ключи **--print-to-console** и **--long-format**):
 
-`0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -twtc -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
+`0 0 * * * /home/user/py/ddec -nb -f /home/user/data/domains0.txt -twtc -i 5 -t -split -e user@gmail.com -ee >/dev/null 2>&1`
 
 или
 
-`0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -twtc -i 5 -t -e user@gmail.com -ee >/dev/null 2>&1`
+`0 0 * * * /home/user/py/./ddec -nb -f /home/user/data/domains0.txt -twtc -i 5 -t -split -e user@gmail.com -ee >/dev/null 2>&1`
 
 Указывайте полные пути к файлу данных и скрипту.
 
@@ -623,7 +635,7 @@ $ crontab -u user -r
 
 **Пример:**
 
-`> schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -twtc -t -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
+`> schtasks /Create /SC DAILY /TN "Domain Expiration Checker" /TR "'с:\ddec.py' -nb -twtc -t -split -e my@email.com -ee -f 'c:\domains.txt'" /ST 23:59`
 
 ## Спасибо
 Автору оригинального скрипта: Matty < matty91 at gmail dot com > [https://github.com/Matty9191](https://github.com/Matty9191)
@@ -645,7 +657,8 @@ $ crontab -u user -r
 Вы можете вносить любые правки в код скрипта и делать форк этого скрипта при условии указания ссылки на меня и на [Matty](https://github.com/Matty9191), как источника вашего вдохновения.
 
 ## Постскриптум
-- Работа скрипта проверялась в Microsoft Windows 10/11, Linux Fedora 29/30/31/32/33/34/35/36, Linux Debian 9/10/11, Linux Ubuntu Desktop 18.04/20.04/20.10/22.04, Linux CentOS 6/7/8, Rocky Linux 8.6/9.0, Linux Manjaro 18.0.2/20.2/21.3.3, Apple macOS 12.4 Monterey на MacBook Pro M1.
+- Работа скрипта проверялась в Microsoft Windows 10/11, Linux Fedora 36/37, Linux Debian 9/10/11/12, Linux Ubuntu Desktop 18.04/20.04/20.10/22.04.2/23.04, CentOS Linux 7.9/8.5, Rocky Linux 8.8/9.2, Linux Manjaro 22.1.3, Apple macOS 13.4.1 Ventura на MacBook Pro M1.
+
 
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 ![Fedora](https://img.shields.io/badge/Fedora-294172?style=for-the-badge&logo=fedora&logoColor=white)

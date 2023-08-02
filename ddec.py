@@ -1,5 +1,4 @@
-#!/usr/bin/python3
-# !/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Program: DNS Domain Expiration Checker from ak545
@@ -15,9 +14,9 @@
 # Leif (https://github.com/akhepcat)
 # woodholly (https://github.com/woodholly)
 #
-# Current Version: 0.2.17
+# Current Version: 0.2.18
 # Creation Date: 2019-07-05
-# Date of last changes: 2023-06-29
+# Date of last changes: 2023-08-02
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -85,7 +84,7 @@ if sys.version_info < (3, 6):
     sys.exit(-1)
 
 # Global constants
-__version__: str = '0.2.17'
+__version__: str = '0.2.18'
 
 FR: str = Fore.RESET
 
@@ -233,7 +232,7 @@ else:
     WHOIS_COMMAND: str = 'whois'
 
 # Timeout for external whois
-WHOIS_COMMAND_TIMEOUT: int = 10
+WHOIS_COMMAND_TIMEOUT: int = 20
 
 # The list of expired domains
 EXPIRES_DOMAIN: Dict = {}
@@ -245,9 +244,9 @@ SOON_DOMAIN: Dict = {}
 WHOIS_TEXT_CHANGED_DOMAIN: Dict = {}
 
 # The list of error domains
-ERRORS_DOMAIN: List = []  # Common errors
-ERRORS2_DOMAIN: List = []  # limit connection
-FREE_DOMAINS: List = []  # Free domains
+ERRORS_DOMAIN: Dict = {}  # Common errors
+ERRORS2_DOMAIN: Dict = {}  # limit connection
+FREE_DOMAINS: Dict = {}  # Free domains
 
 # Command line parameters
 CLI: Optional[Any] = None
@@ -294,10 +293,10 @@ G_TOTAL_COST_EXPIRE: int = 0
 G_DOMAINS_ERROR: int = 0
 
 
-def remove_control_characters_of_colorama(s: str) -> str:
+def remove_control_characters_of_colorama(text: str) -> str:
     """
     Remove all colorama control characters from a string
-    :param s: str
+    :param text: str
     :return: str
     """
     words: Tuple = (
@@ -336,8 +335,8 @@ def remove_control_characters_of_colorama(s: str) -> str:
         SR,
     )
     for word in words:
-        s: str = s.replace(word, '')
-    return s
+        text = text.replace(word, '')
+    return text
 
 
 def save_whois_cache(file: str, json_data: Dict) -> None:
@@ -361,7 +360,7 @@ def load_whois_cache(file: str) -> Optional[Dict]:
     json_data: Optional[Dict] = None
     saved_file: str = f'{WHOIS_CACHE_PATH}{file}'
     if os.path.exists(saved_file):
-        with open(saved_file, 'r+') as f:
+        with open(saved_file, 'r+', encoding='utf8') as f:
             try:
                 json_data = json.load(f)
             except Exception as e:
@@ -384,10 +383,11 @@ def compare_whois_text(f1: str, f2: str, domain: str = None) -> str:
     f2_list: List = f2.splitlines(keepends=True)
     f1_list_fixed: List = []
     f2_list_fixed: List = []
-    for line in f1_list:
-        f1_list_fixed.append(f'{line.lower().strip()}\n')
-    for line in f2_list:
-        f2_list_fixed.append(f'{line.lower().strip()}\n')
+    for line1 in f1_list:
+        f1_list_fixed.append(f'{line1.lower().strip()}\n')
+    for line2 in f2_list:
+        f2_list_fixed.append(f'{line2.lower().strip()}\n')
+
     diff: Optional[Any] = difflib.ndiff(f1_list_fixed, f2_list_fixed)
 
     # TODO: For future functionality
@@ -404,13 +404,13 @@ def compare_whois_text(f1: str, f2: str, domain: str = None) -> str:
     delta: str = ''
     is_found: bool = False
     for x in diff:
-        line_diff: str = x.lower()
+        line_diff: str = x.lower().strip()
         if (
-                ('updated date:' in line_diff) or
-                ('% timestamp:' in line_diff) or
-                ('whois lookup made at ' in line_diff) or
-                ('last update of whois ' in line_diff) or
-                ('last updated on' in line_diff)
+            'updated date:' in line_diff or
+            '% timestamp:' in line_diff or
+            'whois lookup made at ' in line_diff or
+            'last update of whois ' in line_diff or
+            'last updated on' in line_diff
         ):
             continue
         elif line_diff.startswith('- '):
@@ -466,10 +466,10 @@ def whois_check() -> None:
         print(f'\tThe {FLR}whois{FR} not found!')
         if sys.platform == 'win32':
             print(
-                f'\tPlease, install the cygwin from '
-                f'https://www.cygwin.com/ to c:\\cygwin64 (as sample)\n'
-                f'\tChoice in installer whois and install it.\n'
-                f'\tAfter it, add path to c:\\cygwin64\\bin to system PATH variable.\n'
+                '\tPlease, install the cygwin from '
+                'https://www.cygwin.com/ to c:\\cygwin64 (as sample)\n'
+                '\tChoice in installer whois and install it.\n'
+                '\tAfter it, add path to c:\\cygwin64\\bin to system PATH variable.\n'
             )
         elif sys.platform == 'linux':
             print(
@@ -500,10 +500,11 @@ def whois_check() -> None:
         sys.exit(-1)
 
 
-def make_whois_query(domain: str) -> Tuple:
+def make_whois_query(domain: str, domain_group: str) -> Tuple:
     """
     Execute a external whois and parse the data to extract specific data
     :param domain: str
+    :param domain_group: str
     :return: Tuple
     """
     global ERRORS_DOMAIN
@@ -524,9 +525,17 @@ def make_whois_query(domain: str) -> Tuple:
     except Exception as e:
         whois_data = str(e)
 
-        if domain.lower() not in ERRORS_DOMAIN:
+        tmp_list = []
+        if ERRORS_DOMAIN.get(domain_group) is not None:
+            tmp_list = ERRORS_DOMAIN[domain_group]
+            if domain.lower() not in tmp_list:
+                G_DOMAINS_ERROR += 1
+                tmp_list.append(domain.lower())
+                ERRORS_DOMAIN[domain_group] = tmp_list
+        else:
             G_DOMAINS_ERROR += 1
-            ERRORS_DOMAIN.append(domain.lower())
+            tmp_list.append(domain.lower())
+            ERRORS_DOMAIN[domain_group] = tmp_list
 
         if 'timed out after' in whois_data.lower():
             return whois_data, None, None, None, 25
@@ -549,17 +558,18 @@ def make_whois_query(domain: str) -> Tuple:
         r_reg,
         r_w_server,
         r_error
-    ) = parse_whois_data(domain, whois_data)
+    ) = parse_whois_data(domain=domain, domain_group=domain_group, whois_data=whois_data)
     if r_w_data is not None:
         whois_data = r_w_data
 
     return whois_data, r_expir_date, r_reg, r_w_server, r_error
 
 
-def parse_whois_data(domain: str, whois_data: str) -> Tuple:
+def parse_whois_data(domain: str, domain_group: str, whois_data: str) -> Tuple:
     """
     Grab the registrar and expiration date from the WHOIS data
     :param domain: str
+    :param domain_group: str
     :param whois_data: str
     :return: Tuple
     """
@@ -582,12 +592,10 @@ def parse_whois_data(domain: str, whois_data: str) -> Tuple:
         # Connection timed out
         ret_error = 25
         return raw_whois_data, None, None, None, ret_error
-
     elif 'failed to retrieve the whois record' in tmp_whois_data:
         # Failed to retrieve the WHOIS record of the specified domain
         ret_error = 26
         return raw_whois_data, None, None, None, ret_error
-
     elif (
             'no entries found for the selected source(s)' in tmp_whois_data
     ) or (
@@ -598,6 +606,7 @@ def parse_whois_data(domain: str, whois_data: str) -> Tuple:
             f'no match for domain "{domain}"' in tmp_whois_data
     ):
         # It is Free!
+        # print(f'{FC}{tmp_whois_data}')
         ret_error = 11
         return raw_whois_data, None, None, None, ret_error
 
@@ -630,7 +639,9 @@ def parse_whois_data(domain: str, whois_data: str) -> Tuple:
         try:
             page = requests.get(
                 f'https://whois.dot.ph/?utf8=%E2%9C%93&search={domain}',
-                headers=REQUEST_HEADERS
+                timeout=10,
+                headers=REQUEST_HEADERS,
+                verify=True,
             )
         except requests.exceptions.RequestException:
             ret_error = -1
@@ -670,8 +681,17 @@ def parse_whois_data(domain: str, whois_data: str) -> Tuple:
             if 'your connection limit exceeded. please slow down and try again later.' in line:
                 # Interval is small
                 ret_error = 2
-                if domain not in ERRORS2_DOMAIN:
-                    ERRORS2_DOMAIN.append(domain.lower())
+
+                tmp_list = []
+                if ERRORS2_DOMAIN.get(domain_group) is not None:
+                    tmp_list = ERRORS2_DOMAIN[domain_group]
+                    if domain.lower() not in tmp_list:
+                        tmp_list.append(domain.lower())
+                        ERRORS2_DOMAIN[domain_group] = tmp_list
+                else:
+                    tmp_list.append(domain.lower())
+                    ERRORS2_DOMAIN[domain_group] = tmp_list
+
                 return raw_whois_data, None, None, None, ret_error
 
             if any(not_found_string in line for not_found_string in NOT_FOUND_STRINGS):
@@ -717,20 +737,20 @@ def calculate_expiration_days(expiration_date: datetime) -> int:
     return domain_expire.days
 
 
-def make_report_for_telegram() -> Optional[Any]:
+def make_report_for_telegram() -> None:
     """
     Make report for send through the Telegram bot.
-    :return: object
+    :return: None
     """
     g_total_cost: int = G_TOTAL_COST_SOON + G_TOTAL_COST_EXPIRE
 
     if (
-            (len(EXPIRES_DOMAIN) == 0) and
-            (len(SOON_DOMAIN) == 0) and
-            (len(ERRORS_DOMAIN) == 0) and
-            (len(ERRORS2_DOMAIN) == 0) and
-            (len(FREE_DOMAINS) == 0) and
-            (len(WHOIS_TEXT_CHANGED_DOMAIN) == 0)
+            len(EXPIRES_DOMAIN) == 0 and
+            len(SOON_DOMAIN) == 0 and
+            len(ERRORS_DOMAIN) == 0 and
+            len(ERRORS2_DOMAIN) == 0 and
+            len(FREE_DOMAINS) == 0 and
+            len(WHOIS_TEXT_CHANGED_DOMAIN) == 0
     ):
         return None
 
@@ -738,85 +758,140 @@ def make_report_for_telegram() -> Optional[Any]:
     hl: str = f'{"-" * 42}'
     message: str = ''
     message += f'<b>Domains Report  [ {today} ]</b>\n'
-    message += f'<pre>{hl}</pre>\n'
 
     if len(EXPIRES_DOMAIN) > 0:
         # add expiring domains
-        message += '<b>Expiring domains</b><pre>'
-        message += f'{hl}   DL\n'
-        for domain, day_left in EXPIRES_DOMAIN.items():
-            dn: str = f'{domain:<42}'
-            str_domain_item: str = f'{dn} : {day_left}\n'
-            message += str_domain_item
+        message += '\n<b>Expiring domains</b><pre>'
+        message += f'\n{hl}   DL\n'
+        group_i: int = 0
+        i: int = 0
+        for group, list_of_dict_data in EXPIRES_DOMAIN.items():
+            group_i += 1
+            s_g_cr: str = '\n' if group_i > 1 else ''
+            if group != '/':
+                str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                message += str_domain_item
+            for item_dict_data in list_of_dict_data:
+                for domain, day_left in item_dict_data.items():
+                    i += 1
+                    dn: str = f'{domain:<37}'
+                    str_domain_item: str = f'{i:>5}. {dn} {day_left}\n'
+                    message += str_domain_item
         message += '</pre>'
 
     if len(SOON_DOMAIN) > 0:
         # add soon domains
-        message += '\n<b>Soon domains</b><pre>'
-        message += f'{hl}   DL\n'
-        for domain, day_left in SOON_DOMAIN.items():
-            dn: str = f'{domain:<42}'
-            str_domain_item: str = f'{dn} : {day_left}\n'
-            message += str_domain_item
+        message += '\n\n<b>Soon domains</b><pre>'
+        message += f'\n{hl}   DL\n'
+        group_i: int = 0
+        i: int = 0
+        for group, list_of_dict_data in SOON_DOMAIN.items():
+            group_i += 1
+            s_g_cr: str = '\n' if group_i > 1 else ''
+            if group != '/':
+                str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                message += str_domain_item
+            for item_dict_data in list_of_dict_data:
+                for domain, day_left in item_dict_data.items():
+                    i += 1
+                    dn: str = f'{domain:<37}'
+                    str_domain_item: str = f'{i:>5}. {dn} {day_left}\n'
+                    message += str_domain_item
         message += '</pre>'
 
     if len(ERRORS_DOMAIN) > 0:
         # add error domains
-        message += '\n<b>Domains that caused errors</b><pre>'
-        message += f'{hl}\n'
-        for domain in ERRORS_DOMAIN:
-            dn: str = f'{domain:<42}'
-            str_domain_item: str = f'{dn}\n'
-            message += str_domain_item
+        message += '\n\n<b>Domains that caused errors</b><pre>'
+        message += f'\n{hl}\n'
+        group_i: int = 0
+        for group, list_of_domains in ERRORS_DOMAIN.items():
+            group_i += 1
+            s_g_cr: str = '\n' if group_i > 1 else ''
+            if group != '/':
+                str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                message += str_domain_item
+            for i, domain in enumerate(list_of_domains, 1):
+                dn: str = f'{domain:<37}'
+                str_domain_item: str = f'{i:>5}. {dn}\n'
+                message += str_domain_item
         message += '</pre>'
 
     if len(ERRORS2_DOMAIN) > 0:
         # add error2 domains
-        message += '\n<b>Exceeded the limit on whois</b><pre>'
-        message += f'{hl}\n'
-        for domain in ERRORS2_DOMAIN:
-            dn: str = f'{domain:<42}'
-            str_domain_item: str = f'{dn}\n'
-            message += str_domain_item
+        message += '\n\n<b>Exceeded the limit on whois</b><pre>'
+        message += f'\n{hl}\n'
+        group_i: int = 0
+        for group, list_of_domains in ERRORS2_DOMAIN.items():
+            group_i += 1
+            s_g_cr: str = '\n' if group_i > 1 else ''
+            if group != '/':
+                str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                message += str_domain_item
+            for i, domain in enumerate(list_of_domains, 1):
+                dn: str = f'{domain:<37}'
+                str_domain_item: str = f'{i:>5}. {dn}\n'
+                message += str_domain_item
         message += '</pre>'
 
     if len(FREE_DOMAINS) > 0:
         # add free domains
-        message += '\n<b>Free domains</b><pre>'
-        message += f'{hl}\n'
-        for domain in FREE_DOMAINS:
-            dn: str = f'{domain:<42}'
-            str_domain_item: str = f'{dn}\n'
-            message += str_domain_item
+        message += '\n\n<b>Free domains</b><pre>'
+        message += f'\n{hl}\n'
+        group_i: int = 0
+        for group, list_of_domains in FREE_DOMAINS.items():
+            group_i += 1
+            s_g_cr: str = '\n' if group_i > 1 else ''
+            if group != '/':
+                str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                message += str_domain_item
+            for i, domain in enumerate(list_of_domains, 1):
+                dn: str = f'{domain:<37}'
+                str_domain_item: str = f'{i:>5}. {dn}\n'
+                message += str_domain_item
         message += '</pre>'
 
     if len(WHOIS_TEXT_CHANGED_DOMAIN) > 0:
         # add whois-text changed domains
-        message += '\n<b>Domains whose whois text has changed</b><pre>'
-        message += f'{hl}\n'
+        message += '\n\n<b>Domains whose whois text has changed</b><pre>'
+        message += f'\n{hl}\n'
+        group_i: int = 0
         i: int = 0
-        for domain, value in WHOIS_TEXT_CHANGED_DOMAIN.items():
-            i += 1
-            dn: str = f'{domain:<42}'
-            txt: str = value.get('txt')
-            if len(txt) > 350:
-                dt: str = value.get('dt')
-                str_domain_item: str = (
-                    f'{i}. {dn}{dt}\n'
-                    f'{txt[:350]}...\n\n'
-                )
-            else:
-                dt: str = value.get('dt')
-                str_domain_item: str = (
-                    f'{i}. {dn}{dt}\n'
-                    f'{txt}\n\n'
-                )
-            message += str_domain_item
+        for group, list_of_dict_data in WHOIS_TEXT_CHANGED_DOMAIN.items():
+            group_i += 1
+            s_g_cr: str = '\n' if group_i > 1 else ''
+            if group != '/':
+                str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                message += str_domain_item
+            for item_dict_data in list_of_dict_data:
+                for domain, value in item_dict_data.items():
+                    i += 1
+                    dn: str = f'{domain:<20}'
+                    txt: str = value.get('txt')
+                    if CLI.trim_long_whois_text:
+                        if len(txt) > 350:
+                            dt: str = value.get('dt')
+                            str_domain_item: str = (
+                                f'{i:>5}. {dn}{dt}\n\n'
+                                f'{txt[:350]}...\n\n'
+                            )
+                        else:
+                            dt: str = value.get('dt')
+                            str_domain_item: str = (
+                                f'{i:>5}. {dn}{dt}\n\n'
+                                f'{txt}\n\n'
+                            )
+                    else:
+                        dt: str = value.get('dt')
+                        str_domain_item: str = (
+                            f'{i:>5}. {dn}{dt}\n\n'
+                            f'{txt}\n\n'
+                        )
+                    message += str_domain_item
         message += '</pre>'
 
     if g_total_cost > 0:
-        message += '\n<b>Cost</b><pre>'
-        message += f'{hl}\n'
+        message += '\n\n<b>Cost</b><pre>'
+        message += f'\n{hl}\n'
         if G_TOTAL_COST_EXPIRE > 0:
             message += (
                 f'For Expires   : '
@@ -837,34 +912,97 @@ def make_report_for_telegram() -> Optional[Any]:
         )
         message += '</pre>'
 
-    if message != '':
-        message += '\n'
+    if len(message) <= 3800:  # 4086
+        send_telegram(message)
+    else:
+        if not CLI.split_long_message:
+            message = message[:3700]
+            if not message.endswith('</pre>'):
+                message += '</pre>'
 
-    response = send_telegram(message)
-    return response
+            tmp_txt = ''
+            if not CLI.trim_long_whois_text:
+                tmp_txt = (
+                    '<b>-trim</b>'
+                    ' and/or '
+                )
+            message += (
+                f'\n...\n'
+                f'Message is too long!\n'
+                f'Use '
+                f'{tmp_txt}'
+                f'<b>-split</b>'
+                f' option'
+            )
+            if not CLI.trim_long_whois_text:
+                message += 's'
+            if CLI.email_to:
+                message += ' or see full report in email'
+            message += '\n'
+            send_telegram(message)
+        else:
+            ii: int = 0
+            iii: int = 0
+            while True:
+                ii += 1
+                if ii == 1:
+                    message_parts = message[:3800]
+                else:
+                    message_parts = f'# {ii}\n<pre>'
+                    message_parts += message[:3800]
+
+                message_parts = message_parts.rstrip('\n')
+                if not message_parts.endswith('</pre>'):
+                    message_parts += '</pre>'
+
+                message = message[3800:]
+
+                send_telegram(message_parts)
+
+                if len(message) == 0:
+                    break
+
+                # For Telegram limits
+                iii += 1
+                if iii == 20:
+                    iii = 0
+                    time.sleep(40)
+                else:
+                    time.sleep(2)
 
 
-def send_telegram(message: str) -> Optional[Any]:
+def send_telegram(message: str) -> None:
     """
     Sending a message through the Telegram bot.
     :param message: str
-    :return: object
+    :return: None
     """
     params: Dict = {'chat_id': TELEGRAM_CHAT_ID, 'parse_mode': 'html', 'text': message}
-    if len(TELEGRAM_PROXIES) > 0:
-        response = requests.post(
-            TELEGRAM_URL + 'sendMessage',
-            data=params,
-            proxies=TELEGRAM_PROXIES,
-            headers=REQUEST_HEADERS,
-        )
-    else:
-        response = requests.post(
-            TELEGRAM_URL + 'sendMessage',
-            data=params,
-            headers=REQUEST_HEADERS,
-        )
-    return response
+    try:
+
+        if len(TELEGRAM_PROXIES) > 0:
+            r: Optional[Any] = requests.post(
+                TELEGRAM_URL + 'sendMessage',
+                timeout=10,
+                data=params,
+                proxies=TELEGRAM_PROXIES,
+                headers=REQUEST_HEADERS,
+                verify=True,
+            )
+        else:
+            r: Optional[Any] = requests.post(
+                TELEGRAM_URL + 'sendMessage',
+                timeout=10,
+                data=params,
+                headers=REQUEST_HEADERS,
+                verify=True,
+            )
+
+        if r is not None and r.status_code != 200:
+            print(f'{FLR}{r.text}')
+
+    except requests.exceptions.RequestException as e:
+        print(f'{FRC}Error {str(e)}')
 
 
 def make_report_for_email() -> None:
@@ -875,12 +1013,12 @@ def make_report_for_email() -> None:
     g_total_cost: int = G_TOTAL_COST_SOON + G_TOTAL_COST_EXPIRE
 
     if (
-            (len(EXPIRES_DOMAIN) == 0) and
-            (len(SOON_DOMAIN) == 0) and
-            (len(ERRORS_DOMAIN) == 0) and
-            (len(ERRORS2_DOMAIN) == 0) and
-            (len(FREE_DOMAINS) == 0) and
-            (len(WHOIS_TEXT_CHANGED_DOMAIN) == 0)
+            len(EXPIRES_DOMAIN) == 0 and
+            len(SOON_DOMAIN) == 0 and
+            len(ERRORS_DOMAIN) == 0 and
+            len(ERRORS2_DOMAIN) == 0 and
+            len(FREE_DOMAINS) == 0 and
+            len(WHOIS_TEXT_CHANGED_DOMAIN) == 0
     ):
         return
 
@@ -924,7 +1062,8 @@ def make_report_for_email() -> None:
             <div style="width: auto; 
             color:#fff; 
             border-color: rgb(168, 3, 51) !important; 
-            background-color: rgba(199, 0, 57,0.81); 
+            background-color: rgb(199, 0, 57); 
+            
             margin: 50px; 
             padding: 50px; 
             display: inline-block;">
@@ -939,175 +1078,121 @@ def make_report_for_email() -> None:
         hl: str = f'{"-" * 42}'
 
         # For part plain
-        domain_list_txt: str = ''
-        domain_list_txt += f'\n{subject}\n{hl}\n'
-
-        if len(EXPIRES_DOMAIN) > 0:
-            # add expiring domains
-            domain_list_txt += '\nExpiring domains\n\n'
-            domain_list_txt += f'{hl}    DL\n'
-            i: int = 0
-            for domain, day_left in EXPIRES_DOMAIN.items():
-                i += 1
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn} {day_left}\n'
-                domain_list_txt += str_domain_item
-
-        if len(SOON_DOMAIN) > 0:
-            # add soon domains
-            domain_list_txt += '\nSoon domains\n\n'
-            domain_list_txt += f'{hl}    DL\n'
-            i: int = 0
-            for domain, day_left in SOON_DOMAIN.items():
-                i += 1
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn} {day_left}\n'
-                domain_list_txt += str_domain_item
-
-        if len(ERRORS_DOMAIN) > 0:
-            # add error domains
-            domain_list_txt += '\nDomains that caused errors\n\n'
-            domain_list_txt += f'{hl}\n'
-            for i, domain in enumerate(ERRORS_DOMAIN, 1):
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn}\n'
-                domain_list_txt += str_domain_item
-
-        if len(ERRORS2_DOMAIN) > 0:
-            # add error2 domains
-            domain_list_txt += '\nExceeded the limit on whois\n\n'
-            domain_list_txt += f'{hl}\n'
-            for i, domain in enumerate(ERRORS2_DOMAIN, 1):
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn}\n'
-                domain_list_txt += str_domain_item
-
-        if len(FREE_DOMAINS) > 0:
-            # add free domains
-            domain_list_txt += '\nFree domains\n\n'
-            domain_list_txt += f'{hl}\n'
-            for i, domain in enumerate(FREE_DOMAINS, 1):
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn}\n'
-                domain_list_txt += str_domain_item
-
-        if len(WHOIS_TEXT_CHANGED_DOMAIN) > 0:
-            # add whois-text changed domains
-            domain_list_txt += '\nDomains whose whois text has changed\n\n'
-            domain_list_txt += f'{hl}\n'
-            i: int = 0
-            for domain, value in WHOIS_TEXT_CHANGED_DOMAIN.items():
-                i += 1
-                dn: str = f'{domain:<42}'
-                txt: str = value.get('txt')
-                dt: str = value.get('dt')
-                str_domain_item: str = (
-                    f'{i}. {dn}{dt}\n'
-                    f'{txt}\n\n'
-                )
-                domain_list_txt += str_domain_item
-
-        if g_total_cost > 0:
-            domain_list_txt += '\nCost\n'
-            domain_list_txt += f'{hl}\n'
-            if G_TOTAL_COST_EXPIRE > 0:
-                domain_list_txt += (
-                    f'For Expires   : '
-                    f'{G_CURRENCY_SYMBOL} '
-                    f'{round(G_TOTAL_COST_EXPIRE, 2)}\n'
-                )
-            if G_TOTAL_COST_SOON > 0:
-                domain_list_txt += (
-                    f'For Soon      : '
-                    f'{G_CURRENCY_SYMBOL} '
-                    f'{round(G_TOTAL_COST_SOON, 2)}\n'
-                )
-            domain_list_txt += f'{hl}\n'
-            domain_list_txt += (
-                f'Total         : '
-                f'{G_CURRENCY_SYMBOL} '
-                f'{round(g_total_cost, 2)}\n'
-            )
-            domain_list_txt += '\n'
-
-        body_text = body_text.replace('%BODY%', domain_list_txt)
-
-        # For part html
         domain_list: str = ''
-        domain_list += f'<b>{subject}</b><br>\n<pre>{hl}</pre>\n'
+        domain_list += f'\n{subject}\n'
+
         if len(EXPIRES_DOMAIN) > 0:
             # add expiring domains
-            domain_list += '<br><b>Expiring domains</b><br>\n<pre>\n'
+            domain_list += '\nExpiring domains\n\n'
             domain_list += f'{hl}    DL\n'
+            group_i: int = 0
             i: int = 0
-            for domain, day_left in EXPIRES_DOMAIN.items():
-                i += 1
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn} {day_left}\n'
-                domain_list += str_domain_item
-            domain_list += '</pre>'
+            for group, list_of_dict_data in EXPIRES_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                    domain_list += str_domain_item
+                for item_dict_data in list_of_dict_data:
+                    for domain, day_left in item_dict_data.items():
+                        i += 1
+                        dn: str = f'{domain:<37}'
+                        str_domain_item: str = f'{i:>5}. {dn} {day_left}\n'
+                        domain_list += str_domain_item
 
         if len(SOON_DOMAIN) > 0:
             # add soon domains
-            domain_list += '<br><b>Soon domains</b><br>\n<pre>\n'
+            domain_list += '\nSoon domains\n\n'
             domain_list += f'{hl}    DL\n'
+            group_i: int = 0
             i: int = 0
-            for domain, day_left in SOON_DOMAIN.items():
-                i += 1
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn} {day_left}\n'
-                domain_list += str_domain_item
-            domain_list += '</pre>'
+            for group, list_of_dict_data in SOON_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                    domain_list += str_domain_item
+                for item_dict_data in list_of_dict_data:
+                    for domain, day_left in item_dict_data.items():
+                        i += 1
+                        dn: str = f'{domain:<37}'
+                        str_domain_item: str = f'{i:>5}. {dn} {day_left}\n'
+                        domain_list += str_domain_item
 
         if len(ERRORS_DOMAIN) > 0:
             # add error domains
-            domain_list += '<br><b>Domains that caused errors</b><br>\n<pre>\n'
+            domain_list += '\nDomains that caused errors\n\n'
             domain_list += f'{hl}\n'
-            for i, domain in enumerate(ERRORS_DOMAIN, 1):
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn}\n'
-                domain_list += str_domain_item
-            domain_list += '</pre>'
+            group_i: int = 0
+            for group, list_of_domains in ERRORS_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                    domain_list += str_domain_item
+                for i, domain in enumerate(list_of_domains, 1):
+                    dn: str = f'{domain:<37}'
+                    str_domain_item: str = f'{i:>5}. {dn}\n'
+                    domain_list += str_domain_item
 
         if len(ERRORS2_DOMAIN) > 0:
             # add error2 domains
-            domain_list += '<br><b>Exceeded the limit on whois</b><br>\n<pre>\n'
+            domain_list += '\nExceeded the limit on whois\n\n'
             domain_list += f'{hl}\n'
-            for i, domain in enumerate(ERRORS2_DOMAIN, 1):
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn}\n'
-                domain_list += str_domain_item
-            domain_list += '</pre>'
+            group_i: int = 0
+            for group, list_of_domains in ERRORS2_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                    domain_list += str_domain_item
+                for i, domain in enumerate(list_of_domains, 1):
+                    dn: str = f'{domain:<37}'
+                    str_domain_item: str = f'{i:>5}. {dn}\n'
+                    domain_list += str_domain_item
 
         if len(FREE_DOMAINS) > 0:
             # add free domains
-            domain_list += '<br><b>Free domains</b><br>\n<pre>\n'
+            domain_list += '\nFree domains\n\n'
             domain_list += f'{hl}\n'
-            for i, domain in enumerate(FREE_DOMAINS, 1):
-                dn: str = f'{domain:<42}'
-                str_domain_item: str = f'{i}. {dn}\n'
-                domain_list += str_domain_item
-            domain_list += '</pre>'
+            group_i: int = 0
+            for group, list_of_domains in FREE_DOMAINS.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                    domain_list += str_domain_item
+                for i, domain in enumerate(list_of_domains, 1):
+                    dn: str = f'{domain:<37}'
+                    str_domain_item: str = f'{i:>5}. {dn}\n'
+                    domain_list += str_domain_item
 
         if len(WHOIS_TEXT_CHANGED_DOMAIN) > 0:
             # add whois-text changed domains
-            domain_list += '<br><b>Domains whose whois text has changed</b><br>\n<pre>\n'
+            domain_list += '\nDomains whose whois text has changed\n\n'
             domain_list += f'{hl}\n'
+            group_i: int = 0
             i: int = 0
-            for domain, value in WHOIS_TEXT_CHANGED_DOMAIN.items():
-                i += 1
-                dn: str = f'{domain:<42}'
-                txt: str = value.get('txt')
-                dt: str = value.get('dt')
-                str_domain_item: str = (
-                    f'{i}. {dn}{dt}\n'
-                    f'{txt}\n\n'
-                )
-                domain_list += str_domain_item
-            domain_list += '</pre>'
+            for group, list_of_dict_data in WHOIS_TEXT_CHANGED_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
+                    domain_list += str_domain_item
+                for item_dict_data in list_of_dict_data:
+                    for domain, value in item_dict_data.items():
+                        i += 1
+                        dn: str = f'{domain:<20}'
+                        txt: str = value.get('txt')
+                        dt: str = value.get('dt')
+                        str_domain_item: str = (
+                            f'{i:>5}. {dn}{dt}\n\n'
+                            f'{txt}\n\n'
+                        )
+                        domain_list += str_domain_item
 
         if g_total_cost > 0:
-            domain_list += '<br><b>Cost</b><pre>'
+            domain_list += '\nCost\n'
             domain_list += f'{hl}\n'
             if G_TOTAL_COST_EXPIRE > 0:
                 domain_list += (
@@ -1126,6 +1211,214 @@ def make_report_for_email() -> None:
                 f'Total         : '
                 f'{G_CURRENCY_SYMBOL} '
                 f'{round(g_total_cost, 2)}\n'
+            )
+            domain_list += '\n'
+
+        body_text = body_text.replace('%BODY%', domain_list)
+
+        # For part html
+        domain_list = f'<h3><b>{subject}</b></h3><br>\n'
+        if len(EXPIRES_DOMAIN) > 0:
+            # add expiring domains
+            domain_list += (
+                '<br><span style="color: #FFA500"><b>'
+                'Expiring domains'
+                '</b></span><br>\n<pre>\n'
+            )
+            domain_list += f'{hl}    DL\n'
+            group_i: int = 0
+            i: int = 0
+            for group, list_of_dict_data in EXPIRES_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = (
+                        f'\n{s_g_cr}'
+                        f'<span style="color: #F9E79F"><b>'
+                        f'{group_i:>4}. {group}'
+                        f'</b></span>\n\n'
+                    )
+                    domain_list += str_domain_item
+                for item_dict_data in list_of_dict_data:
+                    for domain, day_left in item_dict_data.items():
+                        i += 1
+                        dn: str = f'{domain:<37}'
+                        str_domain_item: str = f'{i:>5}. {dn} {day_left}\n'
+                        domain_list += str_domain_item
+            domain_list += '</pre>'
+
+        if len(SOON_DOMAIN) > 0:
+            # add soon domains
+            domain_list += (
+                '<br><span style="color: #FFA500"><b>'
+                'Soon domains'
+                '</b></span><br>\n<pre>\n'
+            )
+            domain_list += f'{hl}    DL\n'
+            group_i: int = 0
+            i: int = 0
+            for group, list_of_dict_data in SOON_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = (
+                        f'\n{s_g_cr}'
+                        f'<span style="color: #F9E79F"><b>'
+                        f'{group_i:>4}. {group}'
+                        f'</b></span>\n\n'
+                    )
+                    domain_list += str_domain_item
+                for item_dict_data in list_of_dict_data:
+                    for domain, day_left in item_dict_data.items():
+                        i += 1
+                        dn: str = f'{domain:<37}'
+                        str_domain_item: str = f'{i:>5}. {dn} {day_left}\n'
+                        domain_list += str_domain_item
+            domain_list += '</pre>'
+
+        if len(ERRORS_DOMAIN) > 0:
+            # add error domains
+            domain_list += (
+                '<br><span style="color: #FFA500"><b>'
+                'Domains that caused errors'
+                '</b></span><br>\n<pre>\n'
+            )
+            domain_list += f'{hl}\n'
+            group_i: int = 0
+            for group, list_of_domains in ERRORS_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = (
+                        f'\n{s_g_cr}'
+                        f'<span style="color: #F9E79F"><b>'
+                        f'{group_i:>4}. {group}'
+                        f'</b></span>\n\n'
+                    )
+                    domain_list += str_domain_item
+                for i, domain in enumerate(list_of_domains, 1):
+                    dn: str = f'{domain:<37}'
+                    str_domain_item: str = f'{i:>5}. {dn}\n'
+                    domain_list += str_domain_item
+            domain_list += '</pre>'
+
+        if len(ERRORS2_DOMAIN) > 0:
+            # add error2 domains
+            domain_list += (
+                '<br><span style="color: #FFA500"><b>'
+                'Exceeded the limit on whois'
+                '</b></span><br>\n<pre>\n'
+            )
+            domain_list += f'{hl}\n'
+            group_i: int = 0
+            for group, list_of_domains in ERRORS2_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = (
+                        f'\n{s_g_cr}'
+                        f'<span style="color: #F9E79F"><b>'
+                        f'{group_i:>4}. {group}'
+                        f'</b></span>\n\n'
+                    )
+                    domain_list += str_domain_item
+                for i, domain in enumerate(list_of_domains, 1):
+                    dn: str = f'{domain:<37}'
+                    str_domain_item: str = f'{i:>5}. {dn}\n'
+                    domain_list += str_domain_item
+            domain_list += '</pre>'
+
+        if len(FREE_DOMAINS) > 0:
+            # add free domains
+            domain_list += (
+                '<br><span style="color: #FFA500"><b>'
+                'Free domains'
+                '</b></span><br>\n<pre>\n'
+            )
+            domain_list += f'{hl}\n'
+            group_i: int = 0
+            for group, list_of_domains in FREE_DOMAINS.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = (
+                        f'\n{s_g_cr}'
+                        f'<span style="color: #F9E79F"><b>'
+                        f'{group_i:>4}. {group}'
+                        f'</b></span>\n\n'
+                    )
+                    domain_list += str_domain_item
+                for i, domain in enumerate(list_of_domains, 1):
+                    dn: str = f'{domain:<37}'
+                    str_domain_item: str = f'{i:>5}. {dn}\n'
+                    domain_list += str_domain_item
+            domain_list += '</pre>'
+
+        if len(WHOIS_TEXT_CHANGED_DOMAIN) > 0:
+            # add whois-text changed domains
+            domain_list += (
+                '<br><span style="color: #FFA500"><b>'
+                'Domains whose whois text has changed'
+                '</b></span><br>\n<pre>\n'
+            )
+            domain_list += f'{hl}\n'
+            group_i: int = 0
+            i: int = 0
+            for group, list_of_domains in WHOIS_TEXT_CHANGED_DOMAIN.items():
+                group_i += 1
+                s_g_cr: str = '\n' if group_i > 1 else ''
+                if group != '/':
+                    str_domain_item: str = (
+                        f'\n{s_g_cr}'
+                        f'<span style="color: #F9E79F"><b>'
+                        f'{group_i:>4}. {group}'
+                        f'</b></span>\n\n'
+                    )
+                    domain_list += str_domain_item
+                for item_dict_data in list_of_domains:
+                    for domain, value in item_dict_data.items():
+                        i += 1
+                        dn: str = f'{domain:<20}'
+                        txt: str = value.get('txt')
+                        dt: str = value.get('dt')
+                        str_domain_item: str = (
+                            f'<span style="color: #F9E79F"><b>'
+                            f'{i:>5}. {dn}{dt}'
+                            f'</b></span>\n\n'
+                            f'{txt}\n\n'
+                        )
+                        domain_list += str_domain_item
+
+            domain_list += '</pre>'
+
+        if g_total_cost > 0:
+            domain_list += (
+                '<br>'
+                '<span style="color: #FFA500"><b>'
+                'Cost'
+                '</b></span>'
+                '<pre>\n'
+            )
+            domain_list += f'{hl}\n'
+            if G_TOTAL_COST_EXPIRE > 0:
+                domain_list += (
+                    f'For Expires   : '
+                    f'{G_CURRENCY_SYMBOL} '
+                    f'{round(G_TOTAL_COST_EXPIRE, 2)}\n'
+                )
+            if G_TOTAL_COST_SOON > 0:
+                domain_list += (
+                    f'For Soon      : '
+                    f'{G_CURRENCY_SYMBOL} '
+                    f'{round(G_TOTAL_COST_SOON, 2)}\n'
+                )
+            domain_list += f'{hl}\n'
+            domain_list += (
+                f'<b>'
+                f'Total         : '
+                f'{G_CURRENCY_SYMBOL} '
+                f'{round(g_total_cost, 2)}'
+                f'</b>\n'
             )
             domain_list += '</pre>'
 
@@ -1187,7 +1480,6 @@ class MyParser(argparse.ArgumentParser):
     Redefining the argparse.ArgumentParser class to catch
     parameter setting errors in the command line interface (CLI)
     """
-
     def error(self, message):
         """
         Overridden error handler
@@ -1213,7 +1505,7 @@ def process_cli():
 
     \t{FLBC}A simple python script to display or notify a user by email and/or via Telegram
     \tabout the status of the domain and the expiration date.{FR}""",
-        epilog=f'{FLBC}© AK545 (Andrey Klimov) 2019..2022, e-mail: ak545 at mail dot ru\n{FR}',
+        epilog=f'{FLBC}© AK545 (Andrey Klimov) 2019..2023, e-mail: ak545 at mail dot ru\n{FR}',
         add_help=False,
     )
     parent_group = process_parser.add_argument_group(
@@ -1288,6 +1580,20 @@ def process_cli():
         action='store_true',
         default=False,
         help='Enable whois text change monitoring (default is False)'
+    )
+    parent_group.add_argument(
+        '-split',
+        '--split-long-message',
+        action='store_true',
+        default=False,
+        help='Split a long message for Telegram into many short parts (default is False)'
+    )
+    parent_group.add_argument(
+        '-trim',
+        '--trim-long-whois-text',
+        action='store_true',
+        default=False,
+        help='Trim long whois text of changes for a domain for Telegram (default is False)'
     )
     parent_group.add_argument(
         '-t',
@@ -1383,6 +1689,11 @@ def print_namespase() -> None:
         f'\tExpire Days              : {CLI.expire_days}\n'
         f'\tTrack whois text change  : {CLI.track_whois_text_changes}\n'
         f'\tUse Telegram             : {CLI.use_telegram}\n'
+        f'\tTrim long whois text\n'
+        f'\tfor Telegram             : {CLI.trim_long_whois_text}\n'
+        f'\tSplit long Telegram\n'
+        f'\tMessage                  : {CLI.split_long_message}\n'
+        f'\tUse Telegram             : {CLI.use_telegram}\n'
         f'\tProxy for Telegram       : {CLI.proxy}\n'
         f'\tEmail to                 : {CLI.email_to}\n'
         f'\tEmail subject            : {CLI.email_subject}\n'
@@ -1403,7 +1714,7 @@ def print_hr() -> None:
     Pretty print a formatted horizontal line on stdout
     :return: None
     """
-    dn:  str = f'{"-" * 42}'
+    dn:  str = f'{"-" * 37}'
     wis: str = f'{"-" * 40}'
     reg: str = f'{"-" * 60}'
     exd: str = f'{"-" * 20}'
@@ -1431,7 +1742,7 @@ def print_heading() -> None:
     :return: None
     """
     dn: str = 'Domain Name'
-    dn = f'{dn:<42}'
+    dn = f'{dn:<37}'
     wis: str = 'Whois server'
     wis = f'{wis:<40}'
     reg: str = 'Registrar'
@@ -1461,6 +1772,7 @@ def print_heading() -> None:
 
 
 def print_domain(domain: str,
+                 domain_group: str,
                  whois_server: Optional[str],
                  registrar: Optional[str],
                  expiration_date: Optional[datetime],
@@ -1472,6 +1784,7 @@ def print_domain(domain: str,
     """
     Pretty print the domain information on stdout
     :param domain: str
+    :param domain_group: str
     :param whois_server: str
     :param registrar: str
     :param expiration_date: datetime
@@ -1514,6 +1827,7 @@ def print_domain(domain: str,
     if not expiration_date:
         exd: str = f'{"-" * 20}'
     else:
+        # TODO: Here you can set your date format
         # exd: str = f'{expiration_date:%d.%m.%Y %H:%M}    '
         # exd: str = f'{expiration_date:%d.%m.%Y}    '
         exd: str = f'{expiration_date:%Y-%m-%d}    '
@@ -1537,25 +1851,67 @@ def print_domain(domain: str,
         if error == 2:
             dnn = f'{FLR}{dn}{FR}'
             ddl = f'{FLR}{dlerr3}{FR}'
-            if domain.lower() not in ERRORS_DOMAIN:
+
+            tmp_list = []
+            if ERRORS_DOMAIN.get(domain_group) is not None:
+                tmp_list = ERRORS_DOMAIN[domain_group]
+                if domain.lower() not in tmp_list:
+                    G_DOMAINS_ERROR += 1
+                    tmp_list.append(domain.lower())
+                    ERRORS_DOMAIN[domain_group] = tmp_list
+            else:
                 G_DOMAINS_ERROR += 1
-                ERRORS_DOMAIN.append(domain.lower())
+                tmp_list.append(domain.lower())
+                ERRORS_DOMAIN[domain_group] = tmp_list
+
         elif error == 11:
             dnn = f'{FLC}{dn}{FR}'
             ddl = f'{FLC}{dlerr1}{FR}'
-            G_DOMAINS_FREE += 1
-            FREE_DOMAINS.append(domain.lower())
+
+            tmp_list = []
+            if FREE_DOMAINS.get(domain_group) is not None:
+                tmp_list = FREE_DOMAINS[domain_group]
+                if domain.lower() not in tmp_list:
+                    G_DOMAINS_FREE += 1
+                    tmp_list.append(domain.lower())
+                    FREE_DOMAINS[domain_group] = tmp_list
+            else:
+                G_DOMAINS_FREE += 1
+                tmp_list.append(domain.lower())
+                FREE_DOMAINS[domain_group] = tmp_list
+
         else:
             dnn = f'{FLR}{dn}{FR}'
             ddl = f'{FLR}{dlerr1}{FR}'
-            if domain.lower() not in ERRORS_DOMAIN:
+
+            tmp_list = []
+            if ERRORS_DOMAIN.get(domain_group) is not None:
+                tmp_list = ERRORS_DOMAIN[domain_group]
+                if domain.lower() not in tmp_list:
+                    G_DOMAINS_ERROR += 1
+                    tmp_list.append(domain.lower())
+                    ERRORS_DOMAIN[domain_group] = tmp_list
+            else:
                 G_DOMAINS_ERROR += 1
-                ERRORS_DOMAIN.append(domain.lower())
+                tmp_list.append(domain.lower())
+                ERRORS_DOMAIN[domain_group] = tmp_list
+
     elif days_remaining == -2:
         dnn = f'{FLC}{dn}{FR}'
         ddl = f'{FLC}{dlerr2}{FR}'
-        G_DOMAINS_FREE += 1
-        FREE_DOMAINS.append(domain.lower())
+
+        tmp_list = []
+        if FREE_DOMAINS.get(domain_group) is not None:
+            tmp_list = FREE_DOMAINS[domain_group]
+            if domain.lower() not in tmp_list:
+                G_DOMAINS_FREE += 1
+                tmp_list.append(domain.lower())
+                FREE_DOMAINS[domain_group] = tmp_list
+        else:
+            G_DOMAINS_FREE += 1
+            tmp_list.append(domain.lower())
+            FREE_DOMAINS[domain_group] = tmp_list
+
     elif days_remaining < expire_days:
         dnn = f'{FLR}{dn}{FR}'
         ddl = f'{FLR}Expires    {FR}({dl}){FR}'
@@ -1565,7 +1921,19 @@ def print_domain(domain: str,
         if days_remaining < (expire_days + G_SOON_ADD):
             dnn = f'{FLY}{dn}{FR}'
             ddl = f'{FLY}Soon       {FR}({dl}){FR}'
-            SOON_DOMAIN[domain.lower()] = days_remaining
+
+            tmp_list = []
+            tmp_dict = {}
+            if SOON_DOMAIN.get(domain_group) is not None:
+                tmp_list = SOON_DOMAIN[domain_group]
+                tmp_dict[domain.lower()] = days_remaining
+                tmp_list.append(tmp_dict)
+                SOON_DOMAIN[domain_group] = tmp_list
+            else:
+                tmp_dict[domain.lower()] = days_remaining
+                tmp_list.append(tmp_dict)
+                SOON_DOMAIN[domain_group] = tmp_list
+
             G_DOMAINS_SOON += 1
             G_TOTAL_COST_SOON += cost
         else:
@@ -1578,7 +1946,7 @@ def print_domain(domain: str,
 
     number_domain: str = f'{current_domain:>5}'
     dnn = f'{number_domain}. {dnn}'
-    dnn = f'{dnn:<42}'
+    dnn = f'{dnn:<37}'
 
     if CLI.long_format:
         print(
@@ -1596,29 +1964,73 @@ def print_domain(domain: str,
         )
     if error == 22:
         # denic.de
+        tmp_list = []
+        if ERRORS_DOMAIN.get(domain_group) is not None:
+            tmp_list = ERRORS_DOMAIN[domain_group]
+            if domain.lower() not in tmp_list:
+                G_DOMAINS_ERROR += 1
+                tmp_list.append(domain.lower())
+                ERRORS_DOMAIN[domain_group] = tmp_list
+        else:
+            G_DOMAINS_ERROR += 1
+            tmp_list.append(domain.lower())
+            ERRORS_DOMAIN[domain_group] = tmp_list
         print(
-            f"\t{FLBC}The DENIC whois service on port 43 doesn't disclose any information concerning\n"
+            f"\t{FLBC}The DENIC whois service on port 43 doesn't\n"
+            f'\tdisclose any information concerning\n'
             f'\tthe domain holder, general request and abuse contact.\n'
-            f'\tThis information can be obtained through use of our web-based whois service\n'
-            f'\tavailable at the DENIC website:\n'
+            f'\tThis information can be obtained through use of our\n'
+            f'\tweb-based whois service available at the DENIC website:\n'
             f'\thttp://www.denic.de/en/domains/whois-service/web-whois.html{FR}\n'
         )
     elif error == 23:
         # *.nz
         # https://www.dnc.org.nz/whois/search?domain_name=stuff.co.nz
+        tmp_list = []
+        if ERRORS_DOMAIN.get(domain_group) is not None:
+            tmp_list = ERRORS_DOMAIN[domain_group]
+            if domain.lower() not in tmp_list:
+                G_DOMAINS_ERROR += 1
+                tmp_list.append(domain.lower())
+                ERRORS_DOMAIN[domain_group] = tmp_list
+        else:
+            G_DOMAINS_ERROR += 1
+            tmp_list.append(domain.lower())
+            ERRORS_DOMAIN[domain_group] = tmp_list
         print(
             f'\t{FLBC}Additional information may be available at '
             f'https://www.dnc.org.nz/whois/search?domain_name={FY}{domain}{FR}\n'
         )
-
     elif error == 231:
         # *.nz new version of this site
+        tmp_list = []
+        if ERRORS_DOMAIN.get(domain_group) is not None:
+            tmp_list = ERRORS_DOMAIN[domain_group]
+            if domain.lower() not in tmp_list:
+                G_DOMAINS_ERROR += 1
+                tmp_list.append(domain.lower())
+                ERRORS_DOMAIN[domain_group] = tmp_list
+        else:
+            G_DOMAINS_ERROR += 1
+            tmp_list.append(domain.lower())
+            ERRORS_DOMAIN[domain_group] = tmp_list
         print(
             f'\t{FLBC}Additional information may be available at '
             f'https://dnc.org.nz/whois/whois-lookup/?domain_name={FY}{domain}{FR}\n'
         )
     elif error == 24:
         # whois.afilias.net
+        tmp_list = []
+        if ERRORS_DOMAIN.get(domain_group) is not None:
+            tmp_list = ERRORS_DOMAIN[domain_group]
+            if domain.lower() not in tmp_list:
+                G_DOMAINS_ERROR += 1
+                tmp_list.append(domain.lower())
+                ERRORS_DOMAIN[domain_group] = tmp_list
+        else:
+            G_DOMAINS_ERROR += 1
+            tmp_list.append(domain.lower())
+            ERRORS_DOMAIN[domain_group] = tmp_list
         print(
             f'\t{FLBC}The registration of this domain is restricted,\n'
             f'\tas it is protected by the identity digital dpml\n'
@@ -1637,6 +2049,7 @@ def print_domain(domain: str,
         print(
             f'\t{FLBC}Failed to retrieve the WHOIS record of the specified domain{FR}\n'
         )
+
 
 def print_stat() -> None:
     """
@@ -1680,6 +2093,7 @@ def print_stat() -> None:
 
 
 def check_domain(domain_name: str,
+                 domain_group: str,
                  expiration_days: int,
                  cost: float,
                  interval_time: Optional[int] = None,
@@ -1688,9 +2102,10 @@ def check_domain(domain_name: str,
     """
     Check domain
     :param domain_name: str
+    :param domain_group: str
     :param expiration_days: int
     :param cost: float
-    :param interval_time: int
+    :param interval_time: int or None
     :param current_domain: int
     :param checking_whois_text_changes: bool
     :return: bool (False - Error, True - Successfully)
@@ -1702,11 +2117,14 @@ def check_domain(domain_name: str,
     global FREE_DOMAINS
     global WHOIS_TEXT_CHANGED_DOMAIN
 
+    if domain_group == '':
+        domain_group = '/'
+
     is_internal_error: bool = False
     if not interval_time:
         interval_time = CLI.interval_time
 
-    expiration_date: Optional[str] = None
+    expiration_date: Optional[any] = None
     registrar: Optional[str] = None
     whois_server: Optional[str] = None
     ret_error: Optional[int] = None
@@ -1720,7 +2138,10 @@ def check_domain(domain_name: str,
             registrar,
             whois_server,
             ret_error
-        ) = make_whois_query(domain_name)
+        ) = make_whois_query(
+            domain=domain_name,
+            domain_group=domain_group
+        )
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         # Init colorama again
@@ -1732,7 +2153,10 @@ def check_domain(domain_name: str,
         try:
             flags: int = 0
             flags = flags | whois.NICClient.WHOIS_QUICK
-            w = whois.whois(domain_name, flags=flags)
+            w = whois.whois(
+                url=domain_name,
+                flags=flags
+            )
             if w is not None:
                 whois_data = w.text
         except Exception:
@@ -1750,7 +2174,6 @@ def check_domain(domain_name: str,
             expiration_date = w.get('expiration_date')
             registrar = w.get('registrar')
             whois_server = w.get('whois_server')
-
             is_internal_error = expiration_date is None
 
         if is_internal_error:
@@ -1761,16 +2184,35 @@ def check_domain(domain_name: str,
                     registrar_e,
                     whois_server_e,
                     ret_error
-                ) = make_whois_query(domain_name)
+                ) = make_whois_query(
+                    domain=domain_name,
+                    domain_group=domain_group
+                )
 
                 if ret_error is not None:
                     if ret_error in (1, 22):
-                        if domain_name.lower() not in ERRORS_DOMAIN:
-                            ERRORS_DOMAIN.append(domain_name.lower())
+                        tmp_list = []
+                        if ERRORS_DOMAIN.get(domain_group) is not None:
+                            tmp_list = ERRORS_DOMAIN[domain_group]
+                            if domain_name.lower() not in tmp_list:
+                                tmp_list.append(domain_name.lower())
+                                ERRORS_DOMAIN[domain_group] = tmp_list
+                        else:
+                            tmp_list.append(domain_name.lower())
+                            ERRORS_DOMAIN[domain_group] = tmp_list
+
                     elif ret_error == 2:
                         # Exceeded the limit on whois
-                        if domain_name not in ERRORS2_DOMAIN:
-                            ERRORS2_DOMAIN.append(domain_name.lower())
+                        tmp_list = []
+                        if ERRORS2_DOMAIN.get(domain_group) is not None:
+                            tmp_list = ERRORS2_DOMAIN[domain_group]
+                            if domain_name.lower() not in tmp_list:
+                                tmp_list.append(domain_name.lower())
+                                ERRORS2_DOMAIN[domain_group] = tmp_list
+                        else:
+                            tmp_list.append(domain_name.lower())
+                            ERRORS2_DOMAIN[domain_group] = tmp_list
+
                 if not expiration_date:
                     expiration_date = expiration_date_e
                 if not registrar:
@@ -1778,10 +2220,19 @@ def check_domain(domain_name: str,
                 if not whois_server:
                     whois_server = whois_server_e
             else:
-                if domain_name.lower() not in ERRORS_DOMAIN:
-                    ERRORS_DOMAIN.append(domain_name.lower())
+                tmp_list = []
+                if ERRORS_DOMAIN.get(domain_group) is not None:
+                    tmp_list = ERRORS_DOMAIN[domain_group]
+                    if domain_name.lower() not in tmp_list:
+                        tmp_list.append(domain_name.lower())
+                        ERRORS_DOMAIN[domain_group] = tmp_list
+                else:
+                    tmp_list.append(domain_name.lower())
+                    ERRORS_DOMAIN[domain_group] = tmp_list
+
                 print_domain(
                     domain=domain_name,
+                    domain_group=domain_group,
                     whois_server=None,
                     registrar=None,
                     expiration_date=None,
@@ -1791,16 +2242,16 @@ def check_domain(domain_name: str,
                     current_domain=current_domain,
                     error=ret_error
                 )  # Error
-                if current_domain < G_DOMAINS_TOTAL:
-                    if interval_time:
-                        if CLI.print_to_console:
-                            print(f'\tWait {interval_time} sec...\r', end='')
-                        time.sleep(interval_time)
+                if current_domain < G_DOMAINS_TOTAL and interval_time is not None:
+                    if CLI.print_to_console:
+                        print(f'\tWait {interval_time} sec...\r', end='')
+                    time.sleep(interval_time)
                 return False
 
-    if (not whois_server) and (not registrar) and (not expiration_date):
+    if not whois_server and not registrar and not expiration_date:
         print_domain(
             domain=domain_name,
+            domain_group=domain_group,
             whois_server=whois_server,
             registrar=registrar,
             expiration_date=expiration_date,
@@ -1810,16 +2261,16 @@ def check_domain(domain_name: str,
             current_domain=current_domain,
             error=ret_error
         )  # Free ?
-        if current_domain < G_DOMAINS_TOTAL:
-            if interval_time:
-                if CLI.print_to_console:
-                    print(f'\tWait {interval_time} sec...\r', end='')
-                time.sleep(interval_time)
+        if current_domain < G_DOMAINS_TOTAL and interval_time is not None:
+            if CLI.print_to_console:
+                print(f'\tWait {interval_time} sec...\r', end='')
+            time.sleep(interval_time)
         return False
 
     if not expiration_date:
         print_domain(
             domain=domain_name,
+            domain_group=domain_group,
             whois_server=whois_server,
             registrar=registrar,
             expiration_date=expiration_date,
@@ -1829,8 +2280,7 @@ def check_domain(domain_name: str,
             current_domain=current_domain,
             error=ret_error
         )  # Error
-        if current_domain < G_DOMAINS_TOTAL:
-            if interval_time:
+        if current_domain < G_DOMAINS_TOTAL and interval_time is not None:
                 if CLI.print_to_console:
                     print(f'\tWait {interval_time} sec...\r', end='')
                 time.sleep(interval_time)
@@ -1845,6 +2295,7 @@ def check_domain(domain_name: str,
 
     print_domain(
         domain=domain_name,
+        domain_group=domain_group,
         whois_server=whois_server,
         registrar=registrar,
         expiration_date=expiration_date_min,
@@ -1856,7 +2307,18 @@ def check_domain(domain_name: str,
     )
 
     if days_remaining < expiration_days:
-        EXPIRES_DOMAIN[domain_name.lower()] = days_remaining
+
+        tmp_list = []
+        tmp_dict = {}
+        if EXPIRES_DOMAIN.get(domain_group) is not None:
+            tmp_list = EXPIRES_DOMAIN[domain_group]
+            tmp_dict[domain_name.lower()] = days_remaining
+            tmp_list.append(tmp_dict)
+            EXPIRES_DOMAIN[domain_group] = tmp_list
+        else:
+            tmp_dict[domain_name.lower()] = days_remaining
+            tmp_list.append(tmp_dict)
+            EXPIRES_DOMAIN[domain_group] = tmp_list
 
     # Start of Monitoring whois-text changes
     if checking_whois_text_changes:
@@ -1871,7 +2333,11 @@ def check_domain(domain_name: str,
             if CLI.track_whois_text_changes:
                 if last_cache:
                     if last_cache.get('txt') != '':
-                        delta = compare_whois_text(last_cache.get('txt'), whois_data, domain=domain_name.lower())
+                        delta = compare_whois_text(
+                            f1=last_cache.get('txt'),
+                            f2=whois_data,
+                            domain=domain_name.lower()
+                        )
                         if delta != '':
                             delta_lines = delta.splitlines()
                             d_txt = ''
@@ -1880,29 +2346,54 @@ def check_domain(domain_name: str,
                                 d_txt += f'{line}\n'
                                 print(f'{" " * 7}{line}')
                             print('')
-                            WHOIS_TEXT_CHANGED_DOMAIN[domain_name.lower()] = {
-                                'txt': remove_control_characters_of_colorama(d_txt),
-                                'dt': f'{datetime.now():%Y.%m.%d %H:%M:%S}'
-                            }
+                            tmp_list = []
+                            tmp_dict = {}
+                            if WHOIS_TEXT_CHANGED_DOMAIN.get(domain_group) is not None:
+                                tmp_list = WHOIS_TEXT_CHANGED_DOMAIN[domain_group]
+                                tmp_dict[domain_name.lower()] = {
+                                    'txt': remove_control_characters_of_colorama(d_txt),
+                                    'dt': f'{datetime.now():%Y.%m.%d %H:%M:%S}'
+                                }
+                                tmp_list.append(tmp_dict)
+                                WHOIS_TEXT_CHANGED_DOMAIN[domain_group] = tmp_list
+                            else:
+                                tmp_dict[domain_name.lower()] = {
+                                    'txt': remove_control_characters_of_colorama(d_txt),
+                                    'dt': f'{datetime.now():%Y.%m.%d %H:%M:%S}'
+                                }
+                                tmp_list.append(tmp_dict)
+                                WHOIS_TEXT_CHANGED_DOMAIN[domain_group] = tmp_list
+
             save_whois_cache(file, curr_cache)
     # End of Monitoring whois-text changes
 
     return True
 
 
-def is_domain_supported(domain: str) -> bool:
+def is_domain_supported(domain: str, domain_group: str) -> bool:
     """
     Domain support check
     :param domain: str
+    :param domain_group: str
     :return: bool
     """
     global ERRORS_DOMAIN
     global G_DOMAINS_ERROR
 
     if domain.lower().endswith(UNSUPPORTED_DOMAINS):
-        if domain.lower() not in ERRORS_DOMAIN:
+
+        tmp_list = []
+        if ERRORS_DOMAIN.get(domain_group) is not None:
+            tmp_list = ERRORS_DOMAIN[domain_group]
+            if domain.lower() not in tmp_list:
+                G_DOMAINS_ERROR += 1
+                tmp_list.append(domain.lower())
+                ERRORS_DOMAIN[domain_group] = tmp_list
+        else:
             G_DOMAINS_ERROR += 1
-            ERRORS_DOMAIN.append(domain.lower())
+            tmp_list.append(domain.lower())
+            ERRORS_DOMAIN[domain_group] = tmp_list
+
         return False
     return True
 
@@ -1922,6 +2413,7 @@ def prepare_domains_list(file: str) -> None:
 
     with open(file, 'r', encoding='utf-8', newline='\n') as domains_to_process:
         i: int = 0
+        current_group: str = '/'
         for line in domains_to_process:
             domain_dict.clear()
 
@@ -1944,6 +2436,7 @@ def prepare_domains_list(file: str) -> None:
                         # the group header
                         i += 1
                         header: str = ss.partition('!')[2].strip()
+                        current_group = header
 
                         domain_dict['group'] = header
                         domain_dict['domain'] = ''
@@ -1968,7 +2461,7 @@ def prepare_domains_list(file: str) -> None:
                             continue
 
                         domain_dict['domain'] = domain_name
-                        domain_dict['supported'] = is_domain_supported(domain_name)
+                        domain_dict['supported'] = is_domain_supported(domain_name, domain_group=current_group)
                         G_DOMAINS_TOTAL += 1
 
                         if len(word_list) > 1:
@@ -2022,8 +2515,9 @@ def check_cli_logic() -> None:
     if CLI.print_to_console and not CLI.no_banner:
         # Print banner
         if platform.platform().startswith('Windows'):
-            home_path: str = os.path.join(os.getenv('HOMEDRIVE'),
-                                     os.getenv('HOMEPATH'))
+            home_path: str = os.path.join(
+                os.getenv('HOMEDRIVE'), os.getenv('HOMEPATH')
+            )
         else:
             home_path: str = os.path.join(os.getenv('HOME'))
         sys_version: str = str(sys.version).replace('\n', '')
@@ -2047,6 +2541,20 @@ def check_cli_logic() -> None:
                 f'\tThe {FLG}whois{FR} found in: {FC}{WHOIS_COMMAND}'
             )
 
+    if CLI.trim_long_whois_text and (not CLI.use_telegram):
+        print(
+            f'{FLR}The -trim/--trim-long-whois-text option is used '
+            f'in conjunction with the -t/--use-telegram option'
+        )
+        sys.exit(-1)
+
+    if CLI.split_long_message and (not CLI.use_telegram):
+        print(
+            f'{FLR}The -split/--split-long-message option is used '
+            f'in conjunction with the -t/--use-telegram option'
+        )
+        sys.exit(-1)
+
     if CLI.use_only_external_whois and CLI.use_extra_external_whois:
         print(
             f'{FLR}One of the parameters is superfluous. '
@@ -2068,33 +2576,45 @@ def check_cli_logic() -> None:
 
     if CLI.email_ssl and (not CLI.email_to):
         print(
-            f'{FLR}You must specify the email address of the recipient. Use the --email-to option')
+            f'{FLR}You must specify the email address of the recipient. '
+            f'Use the --email-to option'
+        )
         sys.exit(-1)
 
     if CLI.email_subject and (not CLI.email_to):
         print(
-            f'{FLR}You must specify the email address of the recipient. Use the --email-to option')
+            f'{FLR}You must specify the email address of the recipient. '
+            f'Use the --email-to option'
+        )
         sys.exit(-1)
 
     if CLI.email_auth and (not CLI.email_to):
         print(
-            f'{FLR}You must specify the email address of the recipient. Use the --email-to option')
+            f'{FLR}You must specify the email address of the recipient. '
+            f'Use the --email-to option'
+        )
         sys.exit(-1)
 
     if CLI.email_starttls and (not CLI.email_to):
         print(
-            f'{FLR}You must specify the email address of the recipient. Use the --email-to option')
+            f'{FLR}You must specify the email address of the recipient. '
+            f'Use the --email-to option'
+        )
         sys.exit(-1)
 
     if CLI.email_starttls and CLI.email_ssl and CLI.email_to:
         print(
-            f'{FLR}The contradiction of options. You must choose one thing: either --email-ssl or '
-            f'--email-starttls or do not use either one or the other')
+            f'{FLR}The contradiction of options. You must choose one thing: '
+            f'either --email-ssl or '
+            f'--email-starttls or do not use either one or the other'
+        )
         sys.exit(-1)
 
     if CLI.file and CLI.domain:
         print(
-            f'{FLR}One of the parameters is superfluous. Use either --file or --domain')
+            f'{FLR}One of the parameters is superfluous. '
+            f'Use either --file or --domain'
+        )
         sys.exit(-1)
 
     if CLI.proxy and (not CLI.use_telegram):
@@ -2127,9 +2647,9 @@ def main() -> None:
 
     EXPIRES_DOMAIN = {}
     SOON_DOMAIN = {}
-    ERRORS_DOMAIN = []
-    ERRORS2_DOMAIN = []
-    FREE_DOMAINS = []
+    ERRORS_DOMAIN = {}
+    ERRORS2_DOMAIN = {}
+    FREE_DOMAINS = {}
     WHOIS_TEXT_CHANGED_DOMAIN = {}
 
     if CLI.track_whois_text_changes:
@@ -2154,6 +2674,8 @@ def main() -> None:
         # Prepare domains list
         prepare_domains_list(CLI.file)
 
+        current_group: str = '/'
+
         if G_DOMAINS_TOTAL > 0:
             i: int = 0
             current_domain: int = 0
@@ -2161,6 +2683,7 @@ def main() -> None:
             for item in G_DOMAINS_LIST:
                 expiration_days: int = CLI.expire_days
                 group: str = item['group']
+
                 domain: str = item['domain']
                 expire_days: int = item['expire_days']
                 interval_time: int = item['interval_time']
@@ -2169,6 +2692,7 @@ def main() -> None:
                 is_checking_whois_text_changes: bool = item['checking_whois_text_changes']
 
                 if group != "":
+                    current_group = group
                     i += 1
                     si: str = f'{i:>4}'
                     if i == 1:
@@ -2195,12 +2719,13 @@ def main() -> None:
                         dnn: str = f'{FLR}{dn}'
                         number_domain: str = f"{current_domain:>5}"
                         dnn: str = f'{number_domain}. {dnn}'
-                        dnn: str = f'{dnn:<42}'
+                        dnn: str = f'{dnn:<37}'
                         print(f'{dnn} Sorry, this domain is not supported.')
                     else:
                         # Domain Check
                         if not check_domain(
                                 domain_name=domain_name,
+                                domain_group=current_group,
                                 expiration_days=expiration_days,
                                 cost=cost,
                                 interval_time=interval_time,
@@ -2212,14 +2737,13 @@ def main() -> None:
 
                     # Need to wait between queries to avoid triggering DOS measures like so:
                     # Your IP has been restricted due to excessive access, please wait a bit
-                    if current_domain < G_DOMAINS_TOTAL:
-                        if interval_time:
-                            if CLI.print_to_console:
-                                print(
-                                    f'\tWait {interval_time} sec...\r',
-                                    end=''
-                                )
-                            time.sleep(interval_time)
+                    if current_domain < G_DOMAINS_TOTAL and interval_time is not None:
+                        if CLI.print_to_console:
+                            print(
+                                f'\tWait {interval_time} sec...\r',
+                                end=''
+                            )
+                        time.sleep(interval_time)
 
             if CLI.print_to_console:
                 print(f'{" " * 38}\r', end='')
@@ -2239,19 +2763,20 @@ def main() -> None:
         domain_name: str = CLI.domain
         expiration_days: int = CLI.expire_days
         cost: float = CLI.cost_per_domain
-        is_supported: bool = is_domain_supported(domain_name)
+        is_supported: bool = is_domain_supported(domain_name, domain_group='/')
 
         if not is_supported:
             dn: str = f'{domain_name.lower():<35}'
             dnn: str = f'{FLR}{dn}'
             number_domain: str = f'{"1":>5}'
             dnn: str = f'{number_domain}. {dnn}'
-            dnn: str = f'{dnn:<42}'
+            dnn: str = f'{dnn:<37}'
             print(f'{dnn} Sorry, this domain is not supported.')
         else:
             # Domain Check
             check_domain(
                 domain_name=domain_name,
+                domain_group='',
                 expiration_days=expiration_days,
                 cost=cost,
                 interval_time=None,
@@ -2264,21 +2789,18 @@ def main() -> None:
             print('Process complete.')
 
     if (
-            (len(EXPIRES_DOMAIN) > 0) or
-            (len(SOON_DOMAIN) > 0) or
-            (len(ERRORS_DOMAIN) > 0) or
-            (len(ERRORS2_DOMAIN) > 0) or
-            (len(FREE_DOMAINS) > 0) or
-            (len(WHOIS_TEXT_CHANGED_DOMAIN) > 0)
+            len(EXPIRES_DOMAIN) > 0 or
+            len(SOON_DOMAIN) > 0 or
+            len(ERRORS_DOMAIN) > 0 or
+            len(ERRORS2_DOMAIN) > 0 or
+            len(FREE_DOMAINS) > 0 or
+            len(WHOIS_TEXT_CHANGED_DOMAIN) > 0
     ):
         if CLI.email_to:
             make_report_for_email()
 
         if CLI.use_telegram:
-            res: Optional[Any] = make_report_for_telegram()
-            if res is not None:
-                if res.status_code != 200:
-                    print(f'{FLR}{res.text}')
+            make_report_for_telegram()
 
 
 if __name__ == '__main__':
