@@ -14,9 +14,9 @@
 # Leif (https://github.com/akhepcat)
 # woodholly (https://github.com/woodholly)
 #
-# Current Version: 0.2.18
+# Current Version: 0.2.19
 # Creation Date: 2019-07-05
-# Date of last changes: 2023-08-02
+# Date of last changes: 2023-08-03
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -84,7 +84,7 @@ if sys.version_info < (3, 6):
     sys.exit(-1)
 
 # Global constants
-__version__: str = '0.2.18'
+__version__: str = '0.2.19'
 
 FR: str = Fore.RESET
 
@@ -804,13 +804,15 @@ def make_report_for_telegram() -> None:
         message += '\n\n<b>Domains that caused errors</b><pre>'
         message += f'\n{hl}\n'
         group_i: int = 0
+        i: int = 0
         for group, list_of_domains in ERRORS_DOMAIN.items():
             group_i += 1
             s_g_cr: str = '\n' if group_i > 1 else ''
             if group != '/':
                 str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
                 message += str_domain_item
-            for i, domain in enumerate(list_of_domains, 1):
+            for domain in list_of_domains:
+                i += 1
                 dn: str = f'{domain:<37}'
                 str_domain_item: str = f'{i:>5}. {dn}\n'
                 message += str_domain_item
@@ -821,13 +823,15 @@ def make_report_for_telegram() -> None:
         message += '\n\n<b>Exceeded the limit on whois</b><pre>'
         message += f'\n{hl}\n'
         group_i: int = 0
+        i: int = 0
         for group, list_of_domains in ERRORS2_DOMAIN.items():
             group_i += 1
             s_g_cr: str = '\n' if group_i > 1 else ''
             if group != '/':
                 str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
                 message += str_domain_item
-            for i, domain in enumerate(list_of_domains, 1):
+            for domain in list_of_domains:
+                i += 1
                 dn: str = f'{domain:<37}'
                 str_domain_item: str = f'{i:>5}. {dn}\n'
                 message += str_domain_item
@@ -838,13 +842,15 @@ def make_report_for_telegram() -> None:
         message += '\n\n<b>Free domains</b><pre>'
         message += f'\n{hl}\n'
         group_i: int = 0
+        i: int = 0
         for group, list_of_domains in FREE_DOMAINS.items():
             group_i += 1
             s_g_cr: str = '\n' if group_i > 1 else ''
             if group != '/':
                 str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
                 message += str_domain_item
-            for i, domain in enumerate(list_of_domains, 1):
+            for domain in list_of_domains:
+                i += 1
                 dn: str = f'{domain:<37}'
                 str_domain_item: str = f'{i:>5}. {dn}\n'
                 message += str_domain_item
@@ -1124,13 +1130,15 @@ def make_report_for_email() -> None:
             domain_list += '\nDomains that caused errors\n\n'
             domain_list += f'{hl}\n'
             group_i: int = 0
+            i: int = 0
             for group, list_of_domains in ERRORS_DOMAIN.items():
                 group_i += 1
                 s_g_cr: str = '\n' if group_i > 1 else ''
                 if group != '/':
                     str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
                     domain_list += str_domain_item
-                for i, domain in enumerate(list_of_domains, 1):
+                for domain in list_of_domains:
+                    i += 1
                     dn: str = f'{domain:<37}'
                     str_domain_item: str = f'{i:>5}. {dn}\n'
                     domain_list += str_domain_item
@@ -1140,13 +1148,15 @@ def make_report_for_email() -> None:
             domain_list += '\nExceeded the limit on whois\n\n'
             domain_list += f'{hl}\n'
             group_i: int = 0
+            i: int = 0
             for group, list_of_domains in ERRORS2_DOMAIN.items():
                 group_i += 1
                 s_g_cr: str = '\n' if group_i > 1 else ''
                 if group != '/':
                     str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
                     domain_list += str_domain_item
-                for i, domain in enumerate(list_of_domains, 1):
+                for domain in list_of_domains:
+                    i += 1
                     dn: str = f'{domain:<37}'
                     str_domain_item: str = f'{i:>5}. {dn}\n'
                     domain_list += str_domain_item
@@ -1156,13 +1166,15 @@ def make_report_for_email() -> None:
             domain_list += '\nFree domains\n\n'
             domain_list += f'{hl}\n'
             group_i: int = 0
+            i: int = 0
             for group, list_of_domains in FREE_DOMAINS.items():
                 group_i += 1
                 s_g_cr: str = '\n' if group_i > 1 else ''
                 if group != '/':
                     str_domain_item: str = f'\n{s_g_cr}{group_i:>4}. {group}\n\n'
                     domain_list += str_domain_item
-                for i, domain in enumerate(list_of_domains, 1):
+                for domain in list_of_domains:
+                    i += 1
                     dn: str = f'{domain:<37}'
                     str_domain_item: str = f'{i:>5}. {dn}\n'
                     domain_list += str_domain_item
@@ -1285,6 +1297,7 @@ def make_report_for_email() -> None:
             )
             domain_list += f'{hl}\n'
             group_i: int = 0
+            i: int = 0
             for group, list_of_domains in ERRORS_DOMAIN.items():
                 group_i += 1
                 s_g_cr: str = '\n' if group_i > 1 else ''
@@ -1296,7 +1309,8 @@ def make_report_for_email() -> None:
                         f'</b></span>\n\n'
                     )
                     domain_list += str_domain_item
-                for i, domain in enumerate(list_of_domains, 1):
+                for domain in list_of_domains:
+                    i += 1
                     dn: str = f'{domain:<37}'
                     str_domain_item: str = f'{i:>5}. {dn}\n'
                     domain_list += str_domain_item
@@ -1311,6 +1325,7 @@ def make_report_for_email() -> None:
             )
             domain_list += f'{hl}\n'
             group_i: int = 0
+            i: int = 0
             for group, list_of_domains in ERRORS2_DOMAIN.items():
                 group_i += 1
                 s_g_cr: str = '\n' if group_i > 1 else ''
@@ -1322,7 +1337,8 @@ def make_report_for_email() -> None:
                         f'</b></span>\n\n'
                     )
                     domain_list += str_domain_item
-                for i, domain in enumerate(list_of_domains, 1):
+                for domain in list_of_domains:
+                    i += 1
                     dn: str = f'{domain:<37}'
                     str_domain_item: str = f'{i:>5}. {dn}\n'
                     domain_list += str_domain_item
@@ -1337,6 +1353,7 @@ def make_report_for_email() -> None:
             )
             domain_list += f'{hl}\n'
             group_i: int = 0
+            i: int = 0
             for group, list_of_domains in FREE_DOMAINS.items():
                 group_i += 1
                 s_g_cr: str = '\n' if group_i > 1 else ''
@@ -1348,7 +1365,8 @@ def make_report_for_email() -> None:
                         f'</b></span>\n\n'
                     )
                     domain_list += str_domain_item
-                for i, domain in enumerate(list_of_domains, 1):
+                for domain in list_of_domains:
+                    i += 1
                     dn: str = f'{domain:<37}'
                     str_domain_item: str = f'{i:>5}. {dn}\n'
                     domain_list += str_domain_item
