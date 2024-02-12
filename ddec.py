@@ -14,9 +14,9 @@
 # Leif (https://github.com/akhepcat)
 # woodholly (https://github.com/woodholly)
 #
-# Current Version: 0.2.19
+# Current Version: 0.2.23
 # Creation Date: 2019-07-05
-# Date of last changes: 2023-08-03
+# Date of last changes: 2024-02-12
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -46,15 +46,31 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 import subprocess
-import requests
 
+try:
+    import requests
+except ImportError:
+    sys.exit(
+        """You need requests!
+                install it from http://pypi.python.org/pypi/requests
+                or run 'pip install requests'"""
+    )
+try:
+    import socks
+except ImportError:
+    sys.exit(
+        """You need Socks!
+                install it from http://pypi.python.org/pypi/PySocks
+                or run 'pip install PySocks'
+                or run 'pip install requests[socks]'"""
+    )
 try:
     import dateutil.parser
 except ImportError:
     sys.exit(
         """You need python-dateutil!
                 install it from http://pypi.python.org/pypi/python-dateutil
-                or run pip install python-dateutil"""
+                or run 'pip install python-dateutil'"""
     )
 try:
     import whois
@@ -62,7 +78,7 @@ except ImportError:
     sys.exit(
         """You need python-whois!
                 install it from http://pypi.python.org/pypi/python-whois
-                or run pip install python-whois"""
+                or run 'pip install python-whois'"""
     )
 try:
     from colorama import init
@@ -71,7 +87,7 @@ except ImportError:
     sys.exit(
         """You need colorama!
                 install it from http://pypi.python.org/pypi/colorama
-                or run pip install colorama"""
+                or run 'pip install colorama'"""
     )
 
 # Init colorama
@@ -84,7 +100,7 @@ if sys.version_info < (3, 6):
     sys.exit(-1)
 
 # Global constants
-__version__: str = '0.2.19'
+__version__: str = '0.2.23'
 
 FR: str = Fore.RESET
 
@@ -169,7 +185,7 @@ else:
 REQUEST_HEADERS: Dict = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                   'AppleWebKit/537.36 (KHTML, like Gecko) '
-                  'Chrome/104.0.0.0 Safari/537.36'
+                  'Chrome/122.0.0.0 Safari/537.36'
 }
 
 # Options for an external utility whois
@@ -665,12 +681,48 @@ def parse_whois_data(domain: str, domain_group: str, whois_data: str) -> Tuple:
                         )
 
                     str_date = line.replace(
-                        "var expirydate = moment('", ""
+                        "var expirydate = moment('", ''
                     ).replace(
-                        "').format('yyyy-mm-ddthh:mm:ss z');", ""
+                        "').format('yyyy-mm-ddthh:mm:ss z');", ''
                     )
                     expiration_date = dateutil.parser.parse(
                         str_date, ignoretz=True)
+                    break
+
+    elif 'www.dominios.es' in tmp_whois_data:
+        # whois.nic.es
+        try:
+            page = requests.get(
+                f'https://www.iana.org/whois?q={domain}',
+                timeout=10,
+                headers=REQUEST_HEADERS,
+                verify=True,
+            )
+        except requests.exceptions.RequestException:
+            ret_error = -1
+            print(f'{FLR}Failed to fetch remote blocklist providers. Continue...')
+            return raw_whois_data, None, None, None, ret_error
+
+        html = page.content.decode('utf-8', 'ignore').lower()
+        raw_whois_data = html
+        if 'status:       active' in html:
+            ret_error = 232
+            for line in html.splitlines():
+                if 'changed: ' in line:
+                    str_date = line.replace(
+                        'changed:', ''
+                    ).strip()
+                    expiration_date = dateutil.parser.parse(
+                        str_date, ignoretz=True)
+                elif 'whois: ' in line:
+                    whois_server = line.replace(
+                        'whois:', ''
+                    ).strip()
+                elif 'organisation: ' in line:
+                    registrar = line.replace(
+                        'organisation:', ''
+                    ).strip()
+            return raw_whois_data, expiration_date, registrar, whois_server, ret_error
 
     else:
         raw_whois_data = tmp_whois_data
@@ -761,7 +813,7 @@ def make_report_for_telegram() -> None:
 
     if len(EXPIRES_DOMAIN) > 0:
         # add expiring domains
-        message += '\n<b>Expiring domains</b><pre>'
+        message += '\n<b>Domains are expiring</b><pre>'
         message += f'\n{hl}   DL\n'
         group_i: int = 0
         i: int = 0
@@ -781,7 +833,7 @@ def make_report_for_telegram() -> None:
 
     if len(SOON_DOMAIN) > 0:
         # add soon domains
-        message += '\n\n<b>Soon domains</b><pre>'
+        message += '\n\n<b>Domains are expiring soon</b><pre>'
         message += f'\n{hl}   DL\n'
         group_i: int = 0
         i: int = 0
@@ -1049,16 +1101,30 @@ def make_report_for_email() -> None:
         msg['Subject'] = subject
 
         body_text: str = '%BODY%'
+        '''
+        font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace  !important; 
+        padding: 50px; 
+        margin: 50px; 
+        color: $000 !important; 
+        border-color: rgb(31, 31, 31) !important; 
+        background-color: rgba(24,103,194,0.81); 
+        '''
         body_html: str = """
         <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
         <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <style>
+            a:link {  text-decoration: none  !important; color: #FFF  !important; }
+            a:visited  {  text-decoration: none  !important; color: #FFF  !important; }
+            a:hover {  text-decoration: none  !important; color: #F9E79F  !important; }
+            a:active {  text-decoration: none  !important; color: #FFF  !important; }
+        </style>
         </head>
         <html>
         
           <body marginwidth="0" marginheight="0" leftmargin="0" topmargin="0" 
           style="background-color:#333333;  
-          font-family:Arial,serif; 
+          font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace  !important;
           margin:0; 
           padding:0; 
           min-width: 100%; 
@@ -1066,9 +1132,9 @@ def make_report_for_email() -> None:
           -ms-text-size-adjust:none;">
           
             <div style="width: auto; 
-            color:#fff; 
-            border-color: rgb(168, 3, 51) !important; 
-            background-color: rgb(199, 0, 57); 
+            color:#FFFFFF; 
+            border-color: #A80333 !important; 
+            background-color: #C70039; 
             
             margin: 50px; 
             padding: 50px; 
@@ -1089,7 +1155,7 @@ def make_report_for_email() -> None:
 
         if len(EXPIRES_DOMAIN) > 0:
             # add expiring domains
-            domain_list += '\nExpiring domains\n\n'
+            domain_list += '\nDomains are expiring\n\n'
             domain_list += f'{hl}    DL\n'
             group_i: int = 0
             i: int = 0
@@ -1108,7 +1174,7 @@ def make_report_for_email() -> None:
 
         if len(SOON_DOMAIN) > 0:
             # add soon domains
-            domain_list += '\nSoon domains\n\n'
+            domain_list += '\nDomains are expiring soon\n\n'
             domain_list += f'{hl}    DL\n'
             group_i: int = 0
             i: int = 0
@@ -1234,7 +1300,7 @@ def make_report_for_email() -> None:
             # add expiring domains
             domain_list += (
                 '<br><span style="color: #FFA500"><b>'
-                'Expiring domains'
+                'Domains are expiring'
                 '</b></span><br>\n<pre>\n'
             )
             domain_list += f'{hl}    DL\n'
@@ -1263,7 +1329,7 @@ def make_report_for_email() -> None:
             # add soon domains
             domain_list += (
                 '<br><span style="color: #FFA500"><b>'
-                'Soon domains'
+                'Domains are expiring soon'
                 '</b></span><br>\n<pre>\n'
             )
             domain_list += f'{hl}    DL\n'
@@ -1740,16 +1806,16 @@ def print_hr() -> None:
 
     if CLI.long_format:
         print(
-            f'{FLW}{dn}{FR}',
-            f'{FLW}{wis}{FR}',
-            f'{FLW}{reg}{FR}',
-            f'{FLW}{exd}{FR}',
+            f'{FLW}{dn}{FR} '
+            f'{FLW}{wis}{FR} '
+            f'{FLW}{reg}{FR} '
+            f'{FLW}{exd}{FR} '
             f'{FLW}{dl}{FR}'
         )
     else:
         print(
-            f'{FLW}{dn}{FR}',
-            f'{FLW}{exd}{FR}',
+            f'{FLW}{dn}{FR} '
+            f'{FLW}{exd}{FR} '
             f'{FLW}{dl}{FR}'
         )
 
@@ -1774,16 +1840,16 @@ def print_heading() -> None:
 
     if CLI.long_format:
         print(
-            f'{FLW}{dn}{FR}',
-            f'{FLW}{wis}{FR}',
-            f'{FLW}{reg}{FR}',
-            f'{FLW}{exd}{FR}',
+            f'{FLW}{dn}{FR} '
+            f'{FLW}{wis}{FR} '
+            f'{FLW}{reg}{FR} '
+            f'{FLW}{exd}{FR} '
             f'{FLW}{dl}{FR}'
         )
     else:
         print(
-            f'{FLW}{dn}{FR}',
-            f'{FLW}{exd}{FR}',
+            f'{FLW}{dn}{FR} '
+            f'{FLW}{exd}{FR} '
             f'{FLW}{dl}{FR}'
         )
     print_hr()
@@ -1838,17 +1904,25 @@ def print_domain(domain: str,
     else:
         registrar = registrar.strip()
 
-    dn: str = f'{domain.lower():<35}'
+    dn: str = f'{domain.lower():<30}'
     wis: str = f'{whois_server:<40}'
     reg: str = f'{registrar:<60}'
 
     if not expiration_date:
         exd: str = f'{"-" * 20}'
     else:
-        # TODO: Here you can set your date format
-        # exd: str = f'{expiration_date:%d.%m.%Y %H:%M}    '
-        # exd: str = f'{expiration_date:%d.%m.%Y}    '
-        exd: str = f'{expiration_date:%Y-%m-%d}    '
+        if error == 232:
+            # TODO: Here you can set your date format
+            # exd: str = f'changed {expiration_date:%d.%m.%Y %H:%M}'
+            # exd: str = f'changed {expiration_date:%d.%m.%Y}'
+            exd: str = f'changed {expiration_date:%Y-%m-%d}'
+            exd = f'{exd:<20}'
+        else:
+            # TODO: Here you can set your date format
+            # exd: str = f'{expiration_date:%d.%m.%Y %H:%M}'
+            # exd: str = f'{expiration_date:%d.%m.%Y}'
+            exd: str = f'{expiration_date:%Y-%m-%d}'
+            exd = f'{exd:<20}'
 
     dl: str = f'{days_remaining:>4}'
 
@@ -1968,17 +2042,17 @@ def print_domain(domain: str,
 
     if CLI.long_format:
         print(
-            dnn,
-            wis,
-            reg,
-            exd,
-            ddl
+            f'{dnn} '
+            f'{wis} '
+            f'{reg} '
+            f'{exd} '
+            f'{ddl}'
         )
     elif CLI.print_to_console:
         print(
-            dnn,
-            exd,
-            ddl
+            f'{dnn} '
+            f'{exd} '
+            f'{ddl}'
         )
     if error == 22:
         # denic.de
@@ -2035,6 +2109,23 @@ def print_domain(domain: str,
         print(
             f'\t{FLBC}Additional information may be available at '
             f'https://dnc.org.nz/whois/whois-lookup/?domain_name={FY}{domain}{FR}\n'
+        )
+    elif error == 232:
+        # *.es Fucking bureaucrats
+        tmp_list = []
+        if ERRORS_DOMAIN.get(domain_group) is not None:
+            tmp_list = ERRORS_DOMAIN[domain_group]
+            if domain.lower() not in tmp_list:
+                G_DOMAINS_ERROR += 1
+                tmp_list.append(domain.lower())
+                ERRORS_DOMAIN[domain_group] = tmp_list
+        else:
+            G_DOMAINS_ERROR += 1
+            tmp_list.append(domain.lower())
+            ERRORS_DOMAIN[domain_group] = tmp_list
+        print(
+            f'\t{FLBC}Additional information may be available at '
+            f'https://www.dominios.es/\n'
         )
     elif error == 24:
         # whois.afilias.net
@@ -2171,6 +2262,7 @@ def check_domain(domain_name: str,
         try:
             flags: int = 0
             flags = flags | whois.NICClient.WHOIS_QUICK
+            # flags = flags | whois.NICClient.WHOIS_RECURSE
             w = whois.whois(
                 url=domain_name,
                 flags=flags
