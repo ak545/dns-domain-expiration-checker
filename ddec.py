@@ -14,9 +14,9 @@
 # Leif (https://github.com/akhepcat)
 # woodholly (https://github.com/woodholly)
 #
-# Current Version: 0.2.23
+# Current Version: 0.2.25
 # Creation Date: 2019-07-05
-# Date of last changes: 2024-02-12
+# Date of last changes: 2024-03-27
 #
 # License:
 #  This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@ from typing import List, Dict, Tuple, Optional, Any
 import os
 import sys
 import platform
+import socket
 import argparse
 import time
 import json
@@ -100,7 +101,7 @@ if sys.version_info < (3, 6):
     sys.exit(-1)
 
 # Global constants
-__version__: str = '0.2.23'
+__version__: str = '0.2.25'
 
 FR: str = Fore.RESET
 
@@ -167,13 +168,13 @@ TELEGRAM_PROXIES: Dict = {}
 #     'https': 'socks5://127.0.0.1:9150',
 # }
 
-# # Get help from https://core.telegram.org/bots
-# # token that can be generated talking with @BotFather on telegram
+# Get help from https://core.telegram.org/bots
+# token that can be generated talking with @BotFather on telegram
 TELEGRAM_TOKEN: str = '<INSERT YOUR TOKEN>'
-#
-# # channel id for telegram
+
+# channel id for telegram
 TELEGRAM_CHAT_ID: str = '<INSERT YOUR CHANNEL ID>'
-#
+
 # # url for post request to api.telegram.org
 TELEGRAM_URL: str = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/'
 
@@ -185,7 +186,7 @@ else:
 REQUEST_HEADERS: Dict = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                   'AppleWebKit/537.36 (KHTML, like Gecko) '
-                  'Chrome/122.0.0.0 Safari/537.36'
+                  'Chrome/124.0.0.0 Safari/537.36'
 }
 
 # Options for an external utility whois
@@ -277,8 +278,8 @@ G_SOON_ADD: int = 21
 G_DOMAINS_LIST: List = []
 
 # Currency symbol
-# G_CURRENCY_SYMBOL: str = '₽'
-G_CURRENCY_SYMBOL: str = '¥'
+G_CURRENCY_SYMBOL: str = '₽'
+# G_CURRENCY_SYMBOL: str = '¥'
 # G_CURRENCY_SYMBOL: str = '£'
 # G_CURRENCY_SYMBOL: str = '€'
 # G_CURRENCY_SYMBOL: str = '$'
@@ -1109,15 +1110,15 @@ def make_report_for_email() -> None:
         border-color: rgb(31, 31, 31) !important; 
         background-color: rgba(24,103,194,0.81); 
         '''
-        body_html: str = """
+        body_html: str = f"""
         <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
         <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <style>
-            a:link {  text-decoration: none  !important; color: #FFF  !important; }
-            a:visited  {  text-decoration: none  !important; color: #FFF  !important; }
-            a:hover {  text-decoration: none  !important; color: #F9E79F  !important; }
-            a:active {  text-decoration: none  !important; color: #FFF  !important; }
+            a:link {{  text-decoration: none  !important; color: #FFF  !important; }}
+            a:visited  {{  text-decoration: none  !important; color: #FFF  !important; }}
+            a:hover {{  text-decoration: none  !important; color: #F9E79F  !important; }}
+            a:active {{  text-decoration: none  !important; color: #FFF  !important; }}
         </style>
         </head>
         <html>
@@ -1130,6 +1131,23 @@ def make_report_for_email() -> None:
           min-width: 100%; 
           -webkit-text-size-adjust:none; 
           -ms-text-size-adjust:none;">
+          
+            <div
+              style="
+                font-size: 0px;
+                color: #ffffff;
+                line-height: 1px;
+                mso-line-height-rule: exactly;
+                display: none;
+                max-width: 0px;
+                max-height: 0px;
+                opacity: 0;
+                overflow: hidden;
+                mso-hide: all;
+              "
+            >
+                {subject}, Exp: {G_DOMAINS_EXPIRE}, Soon:{G_DOMAINS_SOON}{"&#8199;&#65279;&#847;" * 150}
+            </div>
           
             <div style="width: auto; 
             color:#FFFFFF; 
@@ -1575,6 +1593,36 @@ class MyParser(argparse.ArgumentParser):
         sys.exit(2)
 
 
+def check_positive(value):
+    """
+    Check for positive integer input
+    :param value: str
+    :return: str
+    """
+    try:
+        value = int(value)
+        if value <= 0:
+            raise argparse.ArgumentTypeError(f'{FLR}{value}{FRC} is not a positive integer')
+    except ValueError:
+        raise argparse.ArgumentTypeError(f'{FLR}{value}{FRC} is not an integer')
+    return value
+
+
+def check_float_positive_or_zero(value):
+    """
+    Check for positive or zero float input
+    :param value: str
+    :return: str
+    """
+    try:
+        value = float(value)
+        if value < 0.00:
+            raise argparse.ArgumentTypeError(f'{FLR}{value}{FRC} is not a positive or zero float')
+    except ValueError:
+        raise argparse.ArgumentTypeError(f'{FLR}{value}{FRC} is not an float')
+    return value
+
+
 def process_cli():
     """
     parses the CLI arguments and returns a domain or
@@ -1589,7 +1637,7 @@ def process_cli():
 
     \t{FLBC}A simple python script to display or notify a user by email and/or via Telegram
     \tabout the status of the domain and the expiration date.{FR}""",
-        epilog=f'{FLBC}© AK545 (Andrey Klimov) 2019..2023, e-mail: ak545 at mail dot ru\n{FR}',
+        epilog=f'{FLBC}© AK545 (Andrey Klimov) 2019..2024, e-mail: ak545 at mail dot ru\n{FR}',
         add_help=False,
     )
     parent_group = process_parser.add_argument_group(
@@ -1638,7 +1686,7 @@ def process_cli():
         '-i',
         '--interval-time',
         default=60,
-        type=int,
+        type=check_positive,
         metavar='SECONDS',
         help='Time to sleep between whois queries (in seconds, default is 60)'
     )
@@ -1646,7 +1694,7 @@ def process_cli():
         '-x',
         '--expire-days',
         default=60,
-        type=int,
+        type=check_positive,
         metavar='DAYS',
         help='Expiration threshold to check against (in days, default is 60)'
     )
@@ -1654,7 +1702,7 @@ def process_cli():
         '-s',
         '--cost-per-domain',
         default=0.00,
-        type=float,
+        type=check_float_positive_or_zero,
         metavar='FLOAT',
         help='The cost per one domain (in your currency, default is 0.00)'
     )
@@ -1690,8 +1738,21 @@ def process_cli():
         '-p',
         '--proxy',
         help=(
-            'Proxy link (for Telegram only), '
-            'for example: socks5://127.0.0.1:9150 (default is None)'
+            'Proxy link for Telegram only (default is None)\n'
+            f'{FLBC}for example:\n'
+            'user:password@proxy.someplace.com:8080\n'
+            f'socks5://127.0.0.1:9150{FR}'
+        ),
+        metavar='URL'
+    )
+    parent_group.add_argument(
+        '-piw',
+        '--proxy-internal-whois',
+        help=(
+            'Socks-proxy link for internal whois engine only (default is None)\n'
+            f'{FLBC}for example:\n'
+            'user:password@socksproxy.someplace.com:8080\n'
+            f'127.0.0.1:9150{FR}'
         ),
         metavar='URL'
     )
@@ -1779,6 +1840,7 @@ def print_namespase() -> None:
         f'\tMessage                  : {CLI.split_long_message}\n'
         f'\tUse Telegram             : {CLI.use_telegram}\n'
         f'\tProxy for Telegram       : {CLI.proxy}\n'
+        f'\tSocks for internal whois : {CLI.proxy_internal_whois}\n'
         f'\tEmail to                 : {CLI.email_to}\n'
         f'\tEmail subject            : {CLI.email_subject}\n'
         f'\tEmail SSL                : {CLI.email_ssl}\n'
@@ -2735,6 +2797,52 @@ def check_cli_logic() -> None:
         TELEGRAM_PROXIES.clear()
         TELEGRAM_PROXIES['http'] = CLI.proxy
         TELEGRAM_PROXIES['https'] = CLI.proxy
+
+    if CLI.proxy_internal_whois and CLI.use_only_external_whois:
+        print(
+            f"{FRC}The Socks-proxy setting is for internal whois engine only. "
+            f"Don't use option {FLR}-oe{FRC}/{FLR}--use-only-external-whois{FRC} "
+            f"with option {FLR}-piw{FRC}/{FLR}--proxy-internal-whois"
+        )
+        sys.exit(-1)
+
+    if CLI.proxy_internal_whois and not CLI.use_only_external_whois:
+        os.environ['SOCKS']: str = CLI.proxy_internal_whois.strip()
+        socks_user, socks_password = None, None
+        if '@' in os.environ['SOCKS']:
+            creds, proxy = os.environ['SOCKS'].split('@')
+            socks_user, socks_password = creds.split(':')
+        else:
+            proxy = os.environ['SOCKS']
+        socksproxy, port = proxy.split(':')
+        socks_proto = socket.AF_INET
+
+        try:
+            if socket.AF_INET6 in [
+                sock[0] for sock in socket.getaddrinfo(socksproxy, port)
+            ]:
+                socks_proto = socket.AF_INET6
+        except socket.error as e:
+            print(
+                f'{FLR}{str(e)}'
+            )
+
+        s = socks.socksocket(socks_proto)
+        s.set_proxy(
+            socks.SOCKS5, socksproxy, int(port), True, socks_user, socks_password
+        )
+        s.settimeout(10)
+        try:
+            s.connect(('google.com', 443))
+            s.close()
+        except socket.error as e:
+            print(
+                f'{FLR}{str(e)}\n'
+                f'{FRC}Check the availability of SOCKS5 proxy '
+                f'{FLR}{CLI.proxy_internal_whois.strip()}{FRC}\n'
+            )
+            s.close()
+            sys.exit(-1)
 
     if CLI.print_to_console:
         print_heading()

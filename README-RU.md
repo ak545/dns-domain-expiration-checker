@@ -130,7 +130,15 @@ Options:
   -trim, --trim-long-whois-text
                         Trim long whois text of changes for a domain for Telegram (default is False)
   -t, --use-telegram    Send a warning message through the Telegram (default is False)
-  -p URL, --proxy URL   Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None)
+  -p URL, --proxy URL   Proxy link for Telegram only (default is None)
+                        for example:
+                        user:password@proxy.someplace.com:8080
+                        socks5://127.0.0.1:9150
+  -piw URL, --proxy-internal-whois URL
+                        Socks-proxy link for internal whois engine only (default is None)
+                        for example:
+                        user:password@socksproxy.someplace.com:8080
+                        127.0.0.1:9150
   -e EMAIL, --email-to EMAIL
                         Send a warning message to email address (default is None)
   -subject STRING, --email-subject STRING
@@ -145,7 +153,7 @@ Options:
                         Use external whois utility for additional analysis (default is False)
   -nb, --no-banner      Do not print banner (default is False)
 
-© AK545 (Andrey Klimov) 2019..2023, e-mail: ak545 at mail dot ru
+© AK545 (Andrey Klimov) 2019..2024, e-mail: ak545 at mail dot ru
 ```
 
 ### Описание опций
@@ -298,6 +306,12 @@ youtube.com
 **-p URL, --proxy URL**
 
 Ссылка на прокси (только для Telegram), например: socks5://127.0.0.1:9150 (по умолчанию None).
+
+**-piw URL, --proxy-internal-whois URL**
+
+Ссылка на Socks-прокси только для внутреннего whois-движка, например: user:password@socksproxy.someplace.com:8080 или 127.0.0.1:9150 (по умолчанию None).
+
+Не используйте опцию -oe/--use-only-external-whois с опцией -piw/--proxy-internal-whois.
 
 **-e EMAIL, --email-to EMAIL**
 
