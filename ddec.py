@@ -194,8 +194,8 @@ SMTP_PORT: int = int(os.getenv('SMTP_PORT', '25'))
 # SMTP_SERVER: str = os.getenv('SMTP_SERVER', 'smtp.yandex.ru')
 # SMTP_PORT: int = int(os.getenv('SMTP_PORT', '465'))  # For SSL
 
-# SMTP_SENDER: str = os.getenv('SMTP_SENDER', 'root')
-# SMTP_PASSWORD: str = os.getenv('SMTP_PASSWORD', 'P@ssw0rd')
+SMTP_SENDER: str = os.getenv('SMTP_SENDER', 'root')
+SMTP_PASSWORD: str = os.getenv('SMTP_PASSWORD', 'P@ssw0rd')
 
 # Telegram bot options
 # Proxy for telegram
@@ -220,6 +220,7 @@ MATRIX_USER_ID: str = os.getenv("MATRIX_USER_ID", "@user:example.org")
 MATRIX_USER_PSWD: str = os.getenv("MATRIX_USER_PSWD", "P@ssw0rd")
 MATRIX_DEVICE_NAME: str = os.getenv("MATRIX_DEVICE_NAME", "device_name")
 MATRIX_ROOM_ID: str = os.getenv("MATRIX_ROOM_ID", "!SSSSSSSSSSS:matrix.example.org")
+MATRIX_CONFIG_FILE: str = f'{WHOIS_CACHE_PATH}matrix-credentials.json'
 
 # SSL validation mode.
 # True SSL check (ssl.create_default_context() is used),
