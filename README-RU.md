@@ -86,6 +86,7 @@ $ pip install -U python-whois
 $ pip install -U python-dateutil
 $ pip install -U colorama
 $ pip install -U exrex
+$ pip install -U pytz
 ```
 и
 ```console
@@ -95,6 +96,15 @@ $ pip install -U requests[socks]
 ```console
 $ pip install -U PySocks
 ```
+и
+```console
+$ pip install -U matrix-nio
+```    
+или
+```console
+$ pip install -U matrix-nio[e2e]
+```
+
 Если Вы работаете под управлением Linux или macOS, и запуск скрипта планируете производить от имени текущего пользователя, то дополнительно указывайте опцию **--user**. В этом случае необходимые зависимости будут устанавливаться в домашнюю папку текущего пользователя системы и доступны при запуске из планировщика задач (cron) от имени этого текущего пользователя.
 
 В зависимости от вашего Python окружения, ваши действия будут немного иными, например, возможно, вам потребуется указать ключ **--user** (для **pip**) или вместо команд **python** и **pip** использовать команды **python3** и **pip3**. Если вы используете [виртуальные окружения](https://docs.python.org/3/library/venv.html), то скорее всего, все эти действия вам необходимо будет сделать после входа в соответствующее окружение.
@@ -135,6 +145,7 @@ Options:
                         for example:
                         user:password@proxy.someplace.com:8080
                         socks5://127.0.0.1:9150
+  -m, --use-matrix      Send a warning message through the Matrix (default is False)
   -piw URL, --proxy-internal-whois URL
                         Socks-proxy link for internal whois engine only (default is None)
                         for example:
@@ -154,7 +165,7 @@ Options:
                         Use external whois utility for additional analysis (default is False)
   -nb, --no-banner      Do not print banner (default is False)
 
-© AK545 (Andrey Klimov) 2019..2024, e-mail: ak545 at mail dot ru
+© AK545 (Andrey Klimov) 2019..2026, e-mail: ak545 at mail dot ru
 ```
 
 ### Описание опций
@@ -320,6 +331,10 @@ youtube.com
 
 Отправить предупреждающее сообщение через Telegram (по умолчанию False)
 
+**-m, --use-matrix**
+
+Отправить предупреждающее сообщение через Matrix (по умолчанию False)
+
 **-p URL, --proxy URL**
 
 Ссылка на прокси (только для Telegram), например: socks5://127.0.0.1:9150 (по умолчанию None).
@@ -378,13 +393,13 @@ $ sudo apt update && sudo apt upgrade
 $ sudo apt install whois
 ```
 
-Для устаревших RPM-Based дистрибутивов Linux (RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x):
+Для устаревших RPM-Based дистрибутивов Linux (RHEL 6/RHEL 7/CentOS 6/CentOS 7):
 
 ```console
 $ sudo yum install jwhois
 ```
 
-Для более новых RPM-Based дистрибутивов Linux (RHEL 8.x/CentOS 8.x/Fedora 22 и выше/Rocky Linux/Alma Linux):
+Для более новых RPM-Based дистрибутивов Linux (RHEL 8/CentOS 8/Fedora 22/Linux 8/Alma Linux 8 и выше):
 
 ```console
 $ sudo dnf install jwhois
@@ -509,6 +524,72 @@ Telegram API URL
 ```python
     TELEGRAM_URL = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/"
 ```
+
+### Параметры Matrix
+**MATRIX_HOMESERVER**
+
+Адрес сервера
+
+Пример:
+
+```python
+    MATRIX_HOMESERVER: str = os.getenv("MATRIX_HOMESERVER", "https://matrix.example.org")
+```
+
+**MATRIX_USER_ID**
+
+Идентификатор пользователя
+
+Пример:
+
+```python
+    MATRIX_USER_ID: str = os.getenv("MATRIX_USER_ID", "@user:example.org")
+```
+
+**MATRIX_USER_PSWD**
+
+Пароль пользователя
+
+Пример:
+
+```python
+    MATRIX_USER_PSWD: str = os.getenv("MATRIX_USER_PSWD", "P@ssw0rd")
+```
+
+**MATRIX_DEVICE_NAME**
+
+Имя устройства (на котором запускается данный скрипт)
+
+Пример:
+
+```python
+    MATRIX_DEVICE_NAME: str = os.getenv("MATRIX_DEVICE_NAME", "device_name")
+```
+
+**MATRIX_ROOM_ID**
+
+Идентификатор комнаты
+
+Пример:
+
+```python
+    MATRIX_ROOM_ID: str = os.getenv("MATRIX_ROOM_ID", "!SSSSSSSSSSS:matrix.example.org")
+```
+
+**MATRIX_SSL_CHECK**
+
+Режим проверки SSL
+
+True — полноценная проверка SSL (используется ssl.create_default_context())
+
+False — пропуск проверки SSL-сертификата при подключении
+
+Пример:
+
+```python
+    MATRIX_SSL_CHECK: bool = False
+```
+
 
 ### Опции внешней утилиты whois
 **WHOIS_COMMAND**
@@ -689,7 +770,7 @@ $ crontab -u user -r
 Вы можете вносить любые правки в код скрипта и делать форк этого скрипта при условии указания ссылки на меня и на [Matty](https://github.com/Matty9191), как источника вашего вдохновения.
 
 ## Постскриптум
-- Работа скрипта проверялась в Microsoft Windows 10/11, Linux Fedora 36/38/39, Linux Debian 9/10/11/12, Linux Ubuntu Desktop 18.04/20.04/20.10/22.04.3/23.04, CentOS Linux 7.9/8.5, CentOS Stream 8/9, Rocky Linux 8.9/9.3, Linux Manjaro 23.1.4, Apple macOS 13.4.1 Ventura на MacBook Pro M1.
+- Работа скрипта проверялась в Microsoft Windows 10/11, Linux Fedora 36/38/39, Linux Debian 9/10/11/12/13, Linux Ubuntu Desktop 18.04/20.04/20.10/22.04.3/23.04/24.04, CentOS Linux 7/8, CentOS Stream 8/9, Rocky Linux 8/9/10, Linux Manjaro 23.1.4, Apple macOS (13.6.6 Ventura/14.4.1 Sonoma/26.5.1 Tahoe) на MacBook Pro M1.
 
 
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
@@ -703,6 +784,7 @@ $ crontab -u user -r
 
 - Программный код скррипта не идеален. Но прошу простить меня за это.
 - Да здравствует E = mc&sup2; !
+- Долой бюрократию!
 - Желаю всем удачи!
 
 ## Последняя просьба

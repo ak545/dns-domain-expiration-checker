@@ -81,6 +81,7 @@ $ pip install -U python-whois
 $ pip install -U python-dateutil
 $ pip install -U colorama
 $ pip install -U exrex
+$ pip install -U pytz
 ```
 and
 ```console
@@ -89,6 +90,14 @@ $ pip install -U requests[socks]
 or
 ```console
 $ pip install -U PySocks
+```
+and
+```console
+$ pip install -U matrix-nio
+```    
+or
+```console
+$ pip install -U matrix-nio[e2e]
 ```
 
 If you are running Linux or macOS, and you plan to run the script as the current user, then additionally specify the **--user** option. In this case, the necessary dependencies will be installed into the home folder of the current system user and are available when launched from the task scheduler (cron) on behalf of this current user.
@@ -131,6 +140,7 @@ Options:
                         for example:
                         user:password@proxy.someplace.com:8080
                         socks5://127.0.0.1:9150
+  -m, --use-matrix      Send a warning message through the Matrix (default is False)
   -piw URL, --proxy-internal-whois URL
                         Socks-proxy link for internal whois engine only (default is None)
                         for example:
@@ -150,7 +160,7 @@ Options:
                         Use external whois utility for additional analysis (default is False)
   -nb, --no-banner      Do not print banner (default is False)
 
-© AK545 (Andrey Klimov) 2019..2024, e-mail: ak545 at mail dot ru
+© AK545 (Andrey Klimov) 2019..2026, e-mail: ak545 at mail dot ru
 ```
 
 ### Description of options
@@ -318,6 +328,10 @@ Trim long whois-text of changes for a domain for Telegram (default is False)
 
 Send a warning message through the Telegram (default is False)
 
+**-m, --use-matrix**
+
+Send a warning message through the Matrix (default is False)
+
 **-p URL, --proxy URL**
 
 Proxy link (for Telegram only), for example: socks5://127.0.0.1:9150 (default is None).
@@ -376,12 +390,12 @@ $ sudo apt update && sudo apt upgrade
 $ sudo apt install whois
 ```
 
-For legacy RPM-Based Linux distributions (RHEL 6.x/RHEL 7.x/CentOS 6.x/CentOS 7.x)
+For legacy RPM-Based Linux distributions (RHEL 6/RHEL 7/CentOS 6/CentOS 7)
 ```console
 $ sudo yum install jwhois
 ```
 
-For newer RPM-Based Linux distributions (RHEL 8.x/CentOS 8.x/Fedora 22 and higher/Rocky Linux/Alma Linux):
+For newer RPM-Based Linux distributions (RHEL 8/CentOS 8/Fedora 22/Rocky Linux 8/Alma Linux 8 and higher):
 ```console
 $ sudo dnf install jwhois
 ```
@@ -504,6 +518,72 @@ Samples:
 ```python
     TELEGRAM_URL = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/"
 ```
+
+### Matrix options
+**MATRIX_HOMESERVER**
+
+Address of Matrix Home Server
+
+Samples:
+
+```python
+    MATRIX_HOMESERVER: str = os.getenv("MATRIX_HOMESERVER", "https://matrix.example.org")
+```
+
+**MATRIX_USER_ID**
+
+Matrix User ID
+
+Samples:
+
+```python
+    MATRIX_USER_ID: str = os.getenv("MATRIX_USER_ID", "@user:example.org")
+```
+
+**MATRIX_USER_PSWD**
+
+User Password
+
+Samples:
+
+```python
+    MATRIX_USER_PSWD: str = os.getenv("MATRIX_USER_PSWD", "P@ssw0rd")
+```
+
+**MATRIX_DEVICE_NAME**
+
+Device Name (on which this script is run)
+
+Samples:
+
+```python
+    MATRIX_DEVICE_NAME: str = os.getenv("MATRIX_DEVICE_NAME", "device_name")
+```
+
+**MATRIX_ROOM_ID**
+
+Matrix Room ID
+
+Samples:
+
+```python
+    MATRIX_ROOM_ID: str = os.getenv("MATRIX_ROOM_ID", "!SSSSSSSSSSS:matrix.example.org")
+```
+
+**MATRIX_SSL_CHECK**
+
+SSL validation mode
+
+True SSL check (ssl.create_default_context() is used),
+
+False for skip SSL certificate validation connection.
+
+Samples:
+
+```python
+    MATRIX_SSL_CHECK: bool = False
+```
+
 
 ### External utility whois options
 **WHOIS_COMMAND**
@@ -674,7 +754,7 @@ I, the author of this python script, wrote this script exclusively for my needs.
 You can make any changes to the script code and fork this script, provided that the link to me and [Matty](https://github.com/Matty9191) is indicated as a source of your inspiration.
 
 ## Postscriptum
-- The script was tested in Microsoft Windows 10/11, Linux Fedora 36/38/39, Linux Debian 9/10/11/12, Linux Ubuntu Desktop 18.04/20.04/20.10/22.04.3/23.04, CentOS Linux 7.9/8.5, CentOS Stream 8/9, Rocky Linux 8.9/9.3, Linux Manjaro 23.1.4, Apple macOS 13.6.6 Ventura/Apple macOS 14.4.1 Sonoma on MacBook Pro M1.
+- The script was tested in Microsoft Windows 10/11, Linux Fedora 36/38/39, Linux Debian 9/10/11/12/13, Linux Ubuntu Desktop 18.04/20.04/20.10/22.04.3/23.04/24.04, CentOS Linux 7/8, CentOS Stream 8/9, Rocky Linux 8/9/10, Linux Manjaro 23.1.4, Apple macOS (13.6.6 Ventura/14.4.1 Sonoma/26.5.1 Tahoe) on MacBook Pro M1.
 
 
 
@@ -691,6 +771,7 @@ You can make any changes to the script code and fork this script, provided that 
 - Sorry for my bad English. And on the other hand, which of you can boast of knowing the great and mighty Russian language? Have any of you read Pushkin, Tolstoy, Dostoyevsky, Gogol, Bulgakov in the original...? It's a joke.
 - The program code of the script is not perfect. But please forgive me for that.
 - Glory to the E = mc &sup2; !
+- Down with bureaucracy!
 - I wish you all good luck!
 
 ## A final plea

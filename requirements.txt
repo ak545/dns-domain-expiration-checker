@@ -2,4 +2,6 @@ colorama
 exrex
 python-dateutil
 python-whois
+pytz
 requests[socks]
+matrix-nio
