@@ -215,6 +215,12 @@ TELEGRAM_CHAT_ID: str = '<INSERT YOUR CHANNEL ID>'
 # url for post request to api.telegram.org
 TELEGRAM_URL: str = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/'
 
+if str(os.getenv("SMTP_CHECK_SSL_HOSTNAME")) == "0":
+    SMTP_CHECK_SSL_HOSTNAME: bool = False
+else:
+    SMTP_CHECK_SSL_HOSTNAME: bool = True
+
+# Matrix bot options
 MATRIX_HOMESERVER: str = os.getenv("MATRIX_HOMESERVER", "https://matrix.example.org")
 MATRIX_USER_ID: str = os.getenv("MATRIX_USER_ID", "@user:example.org")
 MATRIX_USER_PSWD: str = os.getenv("MATRIX_USER_PSWD", "P@ssw0rd")
@@ -226,11 +232,6 @@ MATRIX_CONFIG_FILE: str = f'{WHOIS_CACHE_PATH}matrix-credentials.json'
 # True SSL check (ssl.create_default_context() is used),
 # False for skip SSL certificate validation connection.
 MATRIX_SSL_CHECK: bool = False
-
-if str(os.getenv("SMTP_CHECK_SSL_HOSTNAME")) == "0":
-    SMTP_CHECK_SSL_HOSTNAME: bool = False
-else:
-    SMTP_CHECK_SSL_HOSTNAME: bool = True
 
 REQUEST_HEADERS: Dict = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
